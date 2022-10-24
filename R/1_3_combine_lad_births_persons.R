@@ -7,6 +7,7 @@ fpath <- list(dir_processed = "data/processed/",
 
 if(!dir.exists(fpath$dir_processed)) dir.create(fpath$dir_processed, recursive = TRUE)
 
+#use births from mid-year estimate components of change for 2002 onward
 births_my_pre_2002 <- readRDS(fpath$births_my_lad_1991_2017) %>%
   filter(year < 2002)
 
