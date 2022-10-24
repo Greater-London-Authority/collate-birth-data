@@ -4,7 +4,9 @@ library(tidyr)
 
 source("R/functions/add_persons.R")
 
-clean_mye_coc <- function(fp_raw, fp_save) {
+clean_mye_coc <- function(fp_raw, fp_save,
+                          src_name = "ONS mid-year estimates",
+                          src_url = "https://www.ons.gov.uk/peoplepopulationandcommunity/populationandmigration/populationestimates/datasets/populationestimatesforukenglandandwalesscotlandandnorthernireland") {
 
   mye_births <- read_csv(fp_raw) %>%
     rename(gss_code = ladcode21,
@@ -20,7 +22,8 @@ clean_mye_coc <- function(fp_raw, fp_save) {
     ) %>%
     mutate(year = as.integer(year)) %>%
     mutate(year_ending_date = as.Date(paste0(year, "-07-01"))) %>%
-    mutate(source = "Mid Year Estimates",
+    mutate(source = src_name,
+           source_url = src_url,
            geography = "LAD21") %>%
     add_persons()
 
