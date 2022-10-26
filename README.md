@@ -12,7 +12,10 @@ National Statistics.
 
 The repository initially contains code for pulling together data from
 three separately published sources, to create a time series of annual
-births on 2021 geographies. These sources are:
+births on 2021 geographies. The outputs from this process are published
+on the [London
+Datastore](https://data.london.gov.uk/dataset/annual-birth-series). The
+sources drawn from are:
 
 1.  [ONS mid-year population estimates components of
     change](https://www.ons.gov.uk/peoplepopulationandcommunity/populationandmigration/populationestimates/datasets/populationestimatesforukenglandandwalesscotlandandnorthernireland) -
