@@ -10,10 +10,10 @@ clean_mye_coc <- function(fp_raw, fp_save,
 
   mye_births <- read_csv(fp_raw) %>%
     rename(gss_code = ladcode21,
-           gss_name = laname21) %>%
+           gss_name = ladname21) %>%
     filter(age == 0) %>%
     mutate(sex = as.character(sex)) %>%
-    mutate(sex = recode(sex, "1" = "male", "2" = "female")) %>%
+    mutate(sex = recode(sex, "1" = "female", "2" = "male")) %>% #NB: ONS only adopted this convention recently
     select(contains(c("gss_code", "gss_name", "sex", "births"))) %>%
     pivot_longer(cols = contains("births"),
                  names_to = "year",

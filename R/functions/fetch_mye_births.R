@@ -1,6 +1,6 @@
 fetch_mye_births <- function(
     fp_save,
-    url_zip = "https://www.ons.gov.uk/file?uri=/peoplepopulationandcommunity/populationandmigration/populationestimates/datasets/populationestimatesforukenglandandwalesscotlandandnorthernireland/mid2001tomid2020detailedtimeseries/ukdetailedtimeseries2001to2020.zip"
+    url_zip
 ) {
 
   dir_save <- paste0(dirname(fp_save), "/")
@@ -10,11 +10,17 @@ fetch_mye_births <- function(
   download.file(url = url_zip,
                 destfile = fp_zip)
 
+  csv_name <- unzip(fp_zip,
+                        list = TRUE) %>%
+    filter(grepl(".csv", Name)) %>%
+    pull(Name)
+
+
   unzip(fp_zip,
-        files = "MYEB2_detailed_components_of_change_series_EW_(2020_geog21).csv",
+        files = csv_name,
         exdir = paste0(dir_save, "."))
 
-  file.rename(from = paste0(dir_save, "MYEB2_detailed_components_of_change_series_EW_(2020_geog21).csv"),
+  file.rename(from = paste0(dir_save, csv_name),
               to = fp_save)
 
   file.remove(fp_zip)

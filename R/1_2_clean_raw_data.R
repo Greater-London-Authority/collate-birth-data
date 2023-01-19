@@ -17,14 +17,19 @@ fpath <- list(raw_births_cy_lsoa = "data/raw/births_calendar_year_nomis_lsoa.rds
 
 if(!dir.exists(fpath$dir_intermediate)) dir.create(fpath$dir_intermediate, recursive = TRUE)
 
-clean_mye_coc(fpath$raw_mye_coc, fpath$births_mye)
+clean_mye_coc(fp_raw = fpath$raw_mye_coc,
+              fp_save = fpath$births_mye)
 
-clean_births_mid_year_lsoa_1991_2017(fpath$raw_births_my_lsoa, fpath$births_my_lsoa_1991_2017)
+clean_births_mid_year_lsoa_1991_2017(fp_raw = fpath$raw_births_my_lsoa,
+                                     fp_save = fpath$births_my_lsoa_1991_2017)
 
-clean_births_calendar_year_lsoa_nomis(fpath$raw_births_cy_lsoa, fpath$births_cy_lsoa)
+clean_births_calendar_year_lsoa_nomis(fp_raw = fpath$raw_births_cy_lsoa,
+                                      fp_save = fpath$births_cy_lsoa)
 
-aggregate_lsoa11_to_lad(fpath$births_my_lsoa_1991_2017, fpath$births_my_lad_1991_2017,
-                        readRDS(fpath$lookup_lsoa_lad))
+aggregate_lsoa11_to_lad(fp_lsoa = fpath$births_my_lsoa_1991_2017,
+                        fp_save = fpath$births_my_lad_1991_2017,
+                        lookup_lsoa_lad = readRDS(fpath$lookup_lsoa_lad))
 
-aggregate_lsoa11_to_lad(fpath$births_cy_lsoa, fpath$births_cy_lad,
-                        readRDS(fpath$lookup_lsoa_lad))
+aggregate_lsoa11_to_lad(fp_lsoa = fpath$births_cy_lsoa,
+                        fp_save = fpath$births_cy_lad,
+                        lookup_lsoa_lad = readRDS(fpath$lookup_lsoa_lad))
