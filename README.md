@@ -51,7 +51,7 @@ Individual scripts for: downloading, cleaning, combining, and producing
 consolidated output files - can be run individually in order or together
 from
 
-    1__collate_births_lad_persons.R
+    1__run_all__collate_births_lad_persons.R
 
 Outputs are saved in
 
