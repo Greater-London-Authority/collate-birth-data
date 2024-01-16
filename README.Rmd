@@ -42,6 +42,8 @@ Individual scripts for: downloading, cleaning, combining, and producing consolid
 ```
 1__run_all__collate_births_lad_persons.R
 ```
+The script for downloading and cleaning the monthly births and must be manually updated with each ONS data release to give the URL for the new data and account for any changes in format in the downloaded file. 
+
 Outputs are saved in 
 ```
 data/processed/
