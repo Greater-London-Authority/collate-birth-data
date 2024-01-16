@@ -1,6 +1,8 @@
 source("R/functions/fetch_calendar_year_births_lsoa.R")
 source("R/functions/fetch_mid_year_births_lsoa_1992_2017.R")
 source("R/functions/fetch_mye_births.R")
+source("R/functions/fetch_monthly_births_la.R")
+
 
 fpath <- list(dir_raw = "data/raw/",
               raw_births_cy_lsoa = "data/raw/births_calendar_year_nomis_lsoa.rds",
@@ -25,6 +27,10 @@ fetch_mid_year_births_lsoa_1992_2017(fp_save = fpath$raw_births_my_lsoa,
 # get mid-year estimates summary components of change
 fetch_mye_births(fp_save = fpath$raw_mye_coc,
                  url_zip = urls$mye_coc
+)
+
+# get monthly births from ONS adhoc pages (different page for each year, URLS are specified inside function)
+fetch_monthly_births_la(dir_save = "data/raw/monthly_births/"
 )
 
 #2020 MYE file - now superseded

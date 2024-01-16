@@ -1,5 +1,5 @@
-fetch_mid_year_births_lsoa_1992_2017 <- function(
-    dir_save = "data/raw/monthly_births/",
+fetch_monthly_births_la <- function(
+    dir_save = "data/raw/monthly_births/"
 ) {
 
 
@@ -20,7 +20,8 @@ fetch_mid_year_births_lsoa_1992_2017 <- function(
   for (i in seq_along(urls)) {
 
     download.file(urls[[i]],
-                  destfile = fps[[i]])
+                  destfile = fps[[i]],
+                  mode="wb")
   }
 
 
