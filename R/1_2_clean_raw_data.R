@@ -2,6 +2,8 @@ source("R/functions/clean_mye_coc.R")
 source("R/functions/clean_births_mid_year_lsoa_1991_2017.R")
 source("R/functions/clean_births_calendar_year_lsoa_nomis.R")
 source("R/functions/aggregate_lsoa11_to_lad.R")
+source("R/functions/clean_monthly_births_la.R")
+
 
 fpath <- list(raw_births_cy_lsoa = "data/raw/births_calendar_year_nomis_lsoa.rds",
               raw_births_my_lsoa = "data/raw/births_mid_year_lsoa_1991_2017.xlsx",
@@ -31,6 +33,11 @@ clean_births_mid_year_lsoa_1991_2017(fp_raw = fpath$raw_births_my_lsoa,
 
 clean_births_calendar_year_lsoa_nomis(fp_raw = fpath$raw_births_cy_lsoa,
                                       fp_save = fpath$births_cy_lsoa)
+
+clean_monthly_births_la(dir_raw = fpath$dir_raw_monthly_births ,
+                        dir_save = fpath$dir_intermediate_monthly_births,
+                        src_name = "ONS ad hoc",
+                        url_lookup = fpath$monthly_births_urls)
 
 aggregate_lsoa11_to_lad(fp_lsoa = fpath$births_my_lsoa_1991_2017,
                         fp_save = fpath$births_my_lad_1991_2017,
