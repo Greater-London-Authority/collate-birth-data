@@ -1,6 +1,7 @@
 library(readxl)
 library(tidyr)
 library(dplyr)
+library(lubridate)
 
 clean_monthly_births_la <- function(dir_raw, dir_save,
                                     src_name = "ONS ad hoc",
@@ -19,16 +20,18 @@ clean_monthly_births_la <- function(dir_raw, dir_save,
            fp_raw = paste0(dir_raw,"/",gla_filename, ext),
            fp_save = paste0(dir_save,"/",gla_filename, ".rds"))
 
-  for (file_ind in seq_len(nrow(monthly_births_urls))) { # TODO is there a more elgant way to do this than in a for loop?
+  for (file_ind in seq_len(nrow(monthly_births_urls))) { # TODO is there a more elegant way to do this than in a for loop?
 
     file_info <- monthly_births_urls[file_ind,]
 
     # create lookup for date of last day of month for each month in the data
     start_date <- as.Date(file_info$start_date, format = "%d/%m/%Y")
-    month_ends <- seq(start_date, by="month", length.out=13) - 1 # assume all files contain 1 year of data
+    end_date <- as.Date(file_info$end_date, format = "%d/%m/%Y")
+    n_months <- interval(start_date, end_date + 1) / months(1)
+    month_ends <- seq(start_date, by="month", length.out = n_months + 1) - 1
     months_lookup <- data.frame(month_ending_date = month_ends[-1]) %>%
       mutate(month = tolower(months(month_ending_date)))
-    rm(start_date, month_ends)
+    rm(start_date, month_ends, n_months)
 
     raw_data <-  suppressMessages(read_excel(file_info$fp_raw, sheet = file_info$data_sheet_name, col_names = FALSE))
 
@@ -42,13 +45,13 @@ clean_monthly_births_la <- function(dir_raw, dir_save,
     # headers start 2 rows above the data values
 
     # sometimes there is an empty row before the data values start.  Remove this if it exists
-    if (all(is.na(raw_data[start_row - 1, 10:20]))){  # chosen a bunch of columns which should definitely contain data and be empty if the row is an empty one
+    if (all(is.na(raw_data[start_row - 1, 10:20]))){  # chosen a bunch of columns which should definitely contain data or be empty if the row is an empty one
       raw_data <- raw_data[-(start_row-1),]
       start_row <- start_row - 1
     }
 
     # sometimes there is an empty row between the month and sex headers.  Remove this if it exists
-    if (all(is.na(raw_data[start_row - 2, 10:20]))){  # chosen a bunch of columns which should definitely contain data and be empty if the row is an empty one
+    if (all(is.na(raw_data[start_row - 2, 10:20]))){  # chosen a bunch of columns which should definitely contain data or be empty if the row is an empty one
       raw_data <- raw_data[-(start_row-2),]
       start_row <- start_row - 1
     }
@@ -58,9 +61,18 @@ clean_monthly_births_la <- function(dir_raw, dir_save,
       as.data.frame()
 
     month_headers <- births_cols[1,]
+
+    eg_month_header <- month_headers[,1] # month headers are either given as a date or as a character string of month name.
+
+    if(grepl("^\\d+$", eg_month_header)) { # if it has been given as a date in excel, convert this to a date object
+     month_headers <- month_headers %>%
+       mutate(across(all_of(names(month_headers)), \(x) as.Date(as.numeric(x),  origin = "1899-12-30")))
+    }
+    rm(eg_month_header)
+
     long_month_headers = data.frame(t(month_headers))
     long_month_headers <- fill(long_month_headers, X1)
-    month_headers <- data.frame(t(long_month_headers)) # back to vertical.
+    month_headers <- data.frame(t(long_month_headers)) # back to horizontal.
     rm(long_month_headers)
 
     sex_headers <- births_cols[2,]
