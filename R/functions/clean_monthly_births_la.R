@@ -12,7 +12,7 @@ clean_monthly_births_la <- function(dir_raw, dir_save,
   dir_save <- "data/intermediate/monthly_births/"
   src_name <- "ONS ad hoc"
   url_lookup <- "lookups/monthly_births_data_urls.csv"
-  file_ind <- 2 #row number of monthly_births_urls dataframe that specifies the file to work with
+  file_ind <- 1 #row number of monthly_births_urls dataframe that specifies the file to work with
   ####
 
   monthly_births_urls <- read.csv(url_lookup, stringsAsFactors = FALSE) %>%
@@ -21,24 +21,30 @@ clean_monthly_births_la <- function(dir_raw, dir_save,
            fp_save = paste0(dir_save,"/",gla_filename, ".rds"))
 
   for (file_ind in seq_len(nrow(monthly_births_urls))) { # TODO is there a more elegant way to do this than in a for loop?
-    #print(file_ind)
-    file_info <- monthly_births_urls[file_ind,]
 
-    # create lookup for date of last day of month for each month in the data
+    file_info <- monthly_births_urls[file_ind,]
+    print(paste("CLEANING FILE NUMBER", file_ind))
+
+    raw_data <-  suppressMessages(read_excel(file_info$fp_raw, sheet = file_info$data_sheet_name, col_names = FALSE))
+
     start_date <- as.Date(file_info$start_date, format = "%d/%m/%Y")
     end_date <- as.Date(file_info$end_date, format = "%d/%m/%Y")
+    print(paste("Start date (YYYY-MM-DD):", start_date))
+    print(paste("End date (YYYY-MM-DD):", end_date))
+
+    # create lookup for date of last day of month for each month in the data
     n_months <- interval(start_date, end_date + 1) / months(1)
     month_ends <- seq(start_date, by="month", length.out = n_months + 1) - 1
     months_lookup <- data.frame(month_ending_date = month_ends[-1]) %>%
       mutate(month = tolower(months(month_ending_date)))
-    rm(start_date, month_ends, n_months)
-
-    raw_data <-  suppressMessages(read_excel(file_info$fp_raw, sheet = file_info$data_sheet_name, col_names = FALSE))
+    rm(month_ends, n_months)
 
     # start_cell is given as an excel cell reference e.g. D6. Convert to numeric row and col indicies.
     start_col_letter <- gsub("\\d*", "", file_info$births_values_start_cell)
     start_col <- which(letters == tolower(start_col_letter))
     start_row <- as.numeric(gsub("\\D*","",file_info$births_values_start_cell))
+
+    # TODO check that the start cell contains a number, and that the cell to the left and above are not numbers
 
 
     # data comes with the month labels in merged header cells covering columns for totals, female, and male births. Rows are for each LA.
@@ -61,14 +67,43 @@ clean_monthly_births_la <- function(dir_raw, dir_save,
       as.data.frame()
 
     month_headers <- births_cols[1,]
+    sex_headers <- births_cols[2,]
+
+    # check that sex_headers does actually contain the sex headers
+    if (!all(c("total", "male", "female") %in% tolower(sex_headers[1:3]))) {
+      print(head(births_cols, 4))
+      stop("The second row of births_cols must contain: 'total', 'male' & 'female' (case insensitive)")
+    }
 
     eg_month_header <- month_headers[,1] # month headers are either given as a date or as a character string of month name.
-    month_header_type <- "name" # use this to determine how to do the final formatting of the output dataframe
 
     if(grepl("^\\d+$", eg_month_header)) { # if it has been given as a date in excel, convert this to a date object
-      month_header_type <- "date"
+      month_header_type <- "date" # use this to determine how to do the final formatting of the output dataframe
       month_headers <- month_headers %>%
         mutate(across(all_of(names(month_headers)), \(x) as.Date(as.numeric(x),  origin = "1899-12-30")))
+
+      # check that month_headers starts with the expected date and is in the expected format
+      if (!identical(month_headers[,1], start_date)) {
+        stop(paste0("The first date cell has been translated from an excel date number to ", month_headers[,1], ", but the start date for the file has been given as ", start_date ))
+      }
+      if (!(is.na(month_headers[,2]) &
+            is.na(month_headers[,3]))) {
+        print(head(births_cols,4))
+        stop("The first row of births_cols must contain a month name or excel date number followed by 2 NAs repeated along the row")
+      }
+
+
+    } else {
+      month_header_type <- "name"
+
+      # check that month_headers contains months and is in the expected format
+      if (!(tolower(month_headers[,1]) %in% tolower(month.name) &
+            is.na(month_headers[,2]) &
+            is.na(month_headers[,3]))) {
+        print(head(births_cols,4))
+        stop("The first row of births_cols must contain a month name or date followed by 2 NAs repeated along the row")
+      }
+
     }
     rm(eg_month_header)
 
@@ -77,9 +112,6 @@ clean_monthly_births_la <- function(dir_raw, dir_save,
     month_headers <- data.frame(t(long_month_headers)) # back to horizontal.
     rm(long_month_headers)
 
-    sex_headers <- births_cols[2,]
-
-    # headers <- tolower(paste(sex_headers, month_headers, sep = "_"))
     headers <- tolower(paste(month_headers, sex_headers, sep = "_"))
     rm(month_headers, sex_headers)
 
@@ -102,8 +134,6 @@ clean_monthly_births_la <- function(dir_raw, dir_save,
     first_births_col <- names(births_cols)[1]
     last_births_col <- names(births_cols)[ncol(births_cols)]
     last_total_col <- names(births_cols)[ncol(births_cols) - 2] # ugly hack to get rid of any notes ONS might have written below data
-
-    #TODO add check that sex is given as 'total', 'male' or 'female'
 
     data <- bind_cols(geog_cols, births_cols) %>%
       filter(!is.na(get(last_total_col))) %>% # ugly hack to get rid of any notes ONS might have written below data
@@ -142,8 +172,8 @@ clean_monthly_births_la <- function(dir_raw, dir_save,
     data <- rename(data, all_of(rename_list_inv))
 
 
-
-    #print(head(data))
+    print("cleaned data:")
+    print(data, n = 3)
     saveRDS(data, file = file_info$fp_save)
 
   }
