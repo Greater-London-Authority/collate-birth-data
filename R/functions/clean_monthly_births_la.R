@@ -7,12 +7,12 @@ clean_monthly_births_la <- function(dir_raw, dir_save,
                                     src_name = "ONS ad hoc",
                                     url_lookup) {
 
-  #### TODO: delete these as they are fed in through funtion call.
-  dir_raw <- "data/raw/monthly_births/"
-  dir_save <- "data/intermediate/monthly_births/"
-  src_name <- "ONS ad hoc"
-  url_lookup <- "lookups/monthly_births_data_urls.csv"
-  file_ind <- 1 #row number of monthly_births_urls dataframe that specifies the file to work with
+  ####  uncomment to run manually
+  # dir_raw <- "data/raw/monthly_births/"
+  # dir_save <- "data/intermediate/monthly_births/"
+  # src_name <- "ONS ad hoc"
+  # url_lookup <- "lookups/monthly_births_data_urls.csv"
+  # file_ind <- 1 #row number of monthly_births_urls dataframe that specifies the file to work with
   ####
 
   monthly_births_urls <- read.csv(url_lookup, stringsAsFactors = FALSE) %>%
@@ -23,7 +23,7 @@ clean_monthly_births_la <- function(dir_raw, dir_save,
   for (file_ind in seq_len(nrow(monthly_births_urls))) { # TODO is there a more elegant way to do this than in a for loop?
 
     file_info <- monthly_births_urls[file_ind,]
-    print(paste("CLEANING FILE NUMBER", file_ind))
+    print(paste("CLEANING MONTHLY BIRTHS FILE NUMBER", file_ind))
 
     raw_data <-  suppressMessages(read_excel(file_info$fp_raw, sheet = file_info$data_sheet_name, col_names = FALSE))
 
@@ -44,8 +44,15 @@ clean_monthly_births_la <- function(dir_raw, dir_save,
     start_col <- which(letters == tolower(start_col_letter))
     start_row <- as.numeric(gsub("\\D*","",file_info$births_values_start_cell))
 
-    # TODO check that the start cell contains a number, and that the cell to the left and above are not numbers
+    # check that the start cell contains a number, and that the cell to the left and above are not numbers
+    start_cell <- raw_data[start_row, start_col] %>% pull()
+    left <- raw_data[start_row, start_col - 1] %>% pull()
+    above <- raw_data[start_row - 1, start_col] %>% pull()
 
+    if (!grepl("^\\d+$", start_cell)) stop("The start cell does not contain a number") #TODO this test fails if there are commas or decimals in the number. Might have to change that but the regex will be complicated.
+    if (grepl("^\\d+$", left)) stop("The start cell is not the first cell with a number, the one to the left is a number too.") #TODO this test doesn't work if there are commas or decimals in the number. Might have to change that but the regex will be complicated.
+    if (grepl("^\\d+$", above)) stop("The start cell is not the first cell with a number, the one above is a number too.") #TODO this test doesn't work if there are commas or decimals in the number. Might have to change that but the regex will be complicated.
+    rm (start_cell, left, above)
 
     # data comes with the month labels in merged header cells covering columns for totals, female, and male births. Rows are for each LA.
     # headers start 2 rows above the data values
@@ -69,10 +76,11 @@ clean_monthly_births_la <- function(dir_raw, dir_save,
     month_headers <- births_cols[1,]
     sex_headers <- births_cols[2,]
 
-    # check that sex_headers does actually contain the sex headers
-    if (!all(c("total", "male", "female") %in% tolower(sex_headers[1:3]))) {
+    # check that sex_headers does actually contain the sex headers and only the sex headers
+    if (!(all(c("total", "male", "female") %in% tolower(sex_headers[1:3])) &
+          all(tolower(sex_headers) %in% c("total", "male", "female")))) {
       print(head(births_cols, 4))
-      stop("The second row of births_cols must contain: 'total', 'male' & 'female' (case insensitive)")
+      stop("The second row of births_cols must contain: 'total', 'male' & 'female' (case insensitive) and nothing else")
     }
 
     eg_month_header <- month_headers[,1] # month headers are either given as a date or as a character string of month name.
@@ -128,8 +136,6 @@ clean_monthly_births_la <- function(dir_raw, dir_save,
     }
 
     geog_cols <- geog_cols[-1,]
-
-    #TODO: add a QA step that prints the first and last column headers to make sure there arent any random notes on the rhs of the data
 
     first_births_col <- names(births_cols)[1]
     last_births_col <- names(births_cols)[ncol(births_cols)]
