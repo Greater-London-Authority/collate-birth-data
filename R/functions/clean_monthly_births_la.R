@@ -2,6 +2,7 @@ library(readxl)
 library(tidyr)
 library(dplyr)
 library(lubridate)
+library(stringr)
 
 clean_monthly_births_la <- function(dir_raw, dir_save,
                                     src_name = "ONS ad hoc",
@@ -177,6 +178,9 @@ clean_monthly_births_la <- function(dir_raw, dir_save,
     names(rename_list_inv) <- rename_list
     data <- rename(data, all_of(rename_list_inv))
 
+    data <- data %>%
+      filter(grepl("^(E06|E07|E08|E09)", gss_code)) %>% # only keep LAs in England
+      mutate(gss_code = str_replace(gss_code, pattern = intToUtf8(8218), replacement = ",")) # some ONS files use a 'Single Low-9 Quotation Mark' instead of a comma in the combined GSS code areas
 
     print("cleaned data:")
     print(data, n = 3)
