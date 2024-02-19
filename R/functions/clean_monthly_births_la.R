@@ -3,17 +3,18 @@ library(tidyr)
 library(dplyr)
 library(lubridate)
 library(stringr)
+source("R/functions/recode_gss.R")
 
 clean_monthly_births_la <- function(dir_raw, dir_save,
                                     src_name = "ONS ad hoc",
                                     url_lookup) {
 
   ####  uncomment to run manually
-  # dir_raw <- "data/raw/monthly_births/"
-  # dir_save <- "data/intermediate/monthly_births/"
-  # src_name <- "ONS ad hoc"
-  # url_lookup <- "lookups/monthly_births_data_urls.csv"
-  # file_ind <- 1 #row number of monthly_births_urls dataframe that specifies the file to work with
+  dir_raw <- "data/raw/monthly_births/"
+  dir_save <- "data/intermediate/monthly_births/"
+  src_name <- "ONS ad hoc"
+  url_lookup <- "lookups/monthly_births_data_urls.csv"
+  file_ind <- 1 #row number of monthly_births_urls dataframe that specifies the file to work with
   ####
 
   monthly_births_urls <- read.csv(url_lookup, stringsAsFactors = FALSE) %>%
@@ -181,6 +182,20 @@ clean_monthly_births_la <- function(dir_raw, dir_save,
     data <- data %>%
       filter(grepl("^(E06|E07|E08|E09)", gss_code)) %>% # only keep LAs in England
       mutate(gss_code = str_replace(gss_code, pattern = intToUtf8(8218), replacement = ",")) # some ONS files use a 'Single Low-9 Quotation Mark' instead of a comma in the combined GSS code areas
+
+    # Each file has gss codes from different years. Update all codes to 2021
+    data2 <- data %>%
+      mutate(id = row_number()) %>%
+      recode_gss_codes(col_geog="gss_code",
+                       data_cols = "value",
+                       fun = "sum",
+                       recode_to_year = 2021,
+                       aggregate_data = TRUE,
+                       recode_gla_codes = FALSE,
+                       code_changes_path = NULL) %>%
+      arrange(id) %>%
+      tibble()
+
 
     print("cleaned data:")
     print(data, n = 3)
