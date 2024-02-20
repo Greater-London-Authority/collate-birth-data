@@ -10,11 +10,11 @@ clean_monthly_births_la <- function(dir_raw, dir_save,
                                     url_lookup) {
 
   ####  uncomment to run manually
-  dir_raw <- "data/raw/monthly_births/"
-  dir_save <- "data/intermediate/monthly_births/"
-  src_name <- "ONS ad hoc"
-  url_lookup <- "lookups/monthly_births_data_urls.csv"
-  file_ind <- 1 #row number of monthly_births_urls dataframe that specifies the file to work with
+  # dir_raw <- "data/raw/monthly_births/"
+  # dir_save <- "data/intermediate/monthly_births/"
+  # src_name <- "ONS ad hoc"
+  # url_lookup <- "lookups/monthly_births_data_urls.csv"
+  # file_ind <- 1 #row number of monthly_births_urls dataframe that specifies the file to work with
   ####
 
   monthly_births_urls <- read.csv(url_lookup, stringsAsFactors = FALSE) %>%
@@ -51,7 +51,7 @@ clean_monthly_births_la <- function(dir_raw, dir_save,
     left <- raw_data[start_row, start_col - 1] %>% pull()
     above <- raw_data[start_row - 1, start_col] %>% pull()
 
-    if (!grepl("^\\d+$", start_cell)) stop("The start cell does not contain a number") #TODO this test fails if there are commas or decimals in the number. Might have to change that but the regex will be complicated.
+    if (!grepl("^\\d+$", start_cell)) stop("The start cell does not contain a number") #TODO this test fails if there are commas or decimals in the number. So far as no files contain them but this might not always be the case...
     if (grepl("^\\d+$", left)) stop("The start cell is not the first cell with a number, the one to the left is a number too.") #TODO this test doesn't work if there are commas or decimals in the number. Might have to change that but the regex will be complicated.
     if (grepl("^\\d+$", above)) stop("The start cell is not the first cell with a number, the one above is a number too.") #TODO this test doesn't work if there are commas or decimals in the number. Might have to change that but the regex will be complicated.
     rm (start_cell, left, above)
@@ -184,7 +184,8 @@ clean_monthly_births_la <- function(dir_raw, dir_save,
       mutate(gss_code = str_replace(gss_code, pattern = intToUtf8(8218), replacement = ",")) # some ONS files use a 'Single Low-9 Quotation Mark' instead of a comma in the combined GSS code areas
 
     # Each file has gss codes from different years. Update all codes to 2021
-    data2 <- data %>%
+    # This won't work on combined areas (currently "E09000012, E09000001" and "E06000052, E06000053")
+    data <- data %>%
       mutate(id = row_number()) %>%
       recode_gss_codes(col_geog="gss_code",
                        data_cols = "value",
@@ -194,11 +195,49 @@ clean_monthly_births_la <- function(dir_raw, dir_save,
                        recode_gla_codes = FALSE,
                        code_changes_path = NULL) %>%
       arrange(id) %>%
+      select(-id) %>%
       tibble()
+
+    # most years of data have combined codes "E09000012, E09000001" and "E06000052, E06000053".
+    # combine any which aren't so that they match the rest
+
+    Hackney_CoL <- c("E09000012", "E09000001")
+    Hackney_CoL_name <- "Hackney and City of London"
+    Cornwall_Scilly <- c("E06000052", "E06000053")
+    Cornwall_Scilly_name <- "Cornwall and Isles of Scilly"
+
+    if (all(Hackney_CoL %in% data$gss_code)) {
+      combined <- filter(data, gss_code %in% Hackney_CoL) %>%
+        group_by(across(c(-gss_code, -gss_name, -value))) %>%
+        summarise(value = sum(value)) %>%
+        mutate(gss_code = paste(Hackney_CoL, collapse = ", "),
+               gss_name = Hackney_CoL_name) %>%
+        ungroup()
+
+      data <- data %>%
+        filter(!gss_code %in% Hackney_CoL) %>%
+        bind_rows(combined)
+    }
+
+    if (all(Cornwall_Scilly %in% data$gss_code)) {
+      combined <- filter(data, gss_code %in% Cornwall_Scilly) %>%
+        group_by(across(c(-gss_code, -gss_name, -value))) %>%
+        summarise(value = sum(value)) %>%
+        mutate(gss_code = paste(Cornwall_Scilly, collapse = ", "),
+               gss_name = Cornwall_Scilly_name) %>%
+        ungroup()
+
+      data <- data %>%
+        filter(!gss_code %in% Cornwall_Scilly) %>%
+        bind_rows(combined)
+    }
+
+    data <- data %>%
+      arrange(gss_code, month_ending_date, sex)
 
 
     print("cleaned data:")
-    print(data, n = 3)
+    print(data, n = 4)
     saveRDS(data, file = file_info$fp_save)
 
   }
