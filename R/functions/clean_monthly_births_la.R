@@ -14,7 +14,7 @@ clean_monthly_births_la <- function(dir_raw, dir_save,
   # dir_save <- "data/intermediate/monthly_births/"
   # src_name <- "ONS ad hoc"
   # url_lookup <- "lookups/monthly_births_data_urls.csv"
-  # file_ind <- 1 #row number of monthly_births_urls dataframe that specifies the file to work with
+  # file_ind <- 3 #row number of monthly_births_urls dataframe that specifies the file to work with
   ####
 
   monthly_births_urls <- read.csv(url_lookup, stringsAsFactors = FALSE) %>%
@@ -181,6 +181,7 @@ clean_monthly_births_la <- function(dir_raw, dir_save,
 
     data <- data %>%
       filter(grepl("^(E06|E07|E08|E09)", gss_code)) %>% # only keep LAs in England
+      select(-gss_name) %>% # these are replaced below with our own lookup
       mutate(gss_code = str_replace(gss_code, pattern = intToUtf8(8218), replacement = ",")) # some ONS files use a 'Single Low-9 Quotation Mark' instead of a comma in the combined GSS code areas
 
     # Each file has gss codes from different years. Update all codes to 2021
@@ -208,10 +209,9 @@ clean_monthly_births_la <- function(dir_raw, dir_save,
 
     if (all(Hackney_CoL %in% data$gss_code)) {
       combined <- filter(data, gss_code %in% Hackney_CoL) %>%
-        group_by(across(c(-gss_code, -gss_name, -value))) %>%
+        group_by(across(c(-gss_code, -value))) %>%
         summarise(value = sum(value)) %>%
-        mutate(gss_code = paste(Hackney_CoL, collapse = ", "),
-               gss_name = Hackney_CoL_name) %>%
+        mutate(gss_code = paste(Hackney_CoL, collapse = ", ")) %>%
         ungroup()
 
       data <- data %>%
@@ -221,10 +221,9 @@ clean_monthly_births_la <- function(dir_raw, dir_save,
 
     if (all(Cornwall_Scilly %in% data$gss_code)) {
       combined <- filter(data, gss_code %in% Cornwall_Scilly) %>%
-        group_by(across(c(-gss_code, -gss_name, -value))) %>%
+        group_by(across(c(-gss_code, -value))) %>%
         summarise(value = sum(value)) %>%
-        mutate(gss_code = paste(Cornwall_Scilly, collapse = ", "),
-               gss_name = Cornwall_Scilly_name) %>%
+        mutate(gss_code = paste(Cornwall_Scilly, collapse = ", ")) %>%
         ungroup()
 
       data <- data %>%
@@ -235,6 +234,22 @@ clean_monthly_births_la <- function(dir_raw, dir_save,
     data <- data %>%
       arrange(gss_code, month_ending_date, sex)
 
+    # Take LA names from the lad_rgn lookup file (uses 2021 geography) as the ONS data doesn't have consistent naming across files
+    la_lookup <- readRDS("lookups/lookup_lad_rgn.rds") %>%
+      select(gss_code, gss_name)
+
+    combined_gss <- data.frame(gss_code = c(paste(Hackney_CoL, collapse = ", "), paste(Cornwall_Scilly, collapse = ", ")),
+                               gss_name = c(Hackney_CoL_name, Cornwall_Scilly_name))
+
+    la_lookup <- bind_rows(la_lookup, combined_gss)
+
+    if (nrow(filter(data, !gss_code %in% la_lookup$gss_code)) != 0) {
+      stop("there are gss codes in the raw data which aren't in the project's lad to region lookup file")
+    }
+
+    data <- data %>%
+      left_join(la_lookup, by = "gss_code") %>%
+      select(gss_code, gss_name, source, source_url, sex, year, month, month_ending_date, value)
 
     print("cleaned data:")
     print(data, n = 4)
