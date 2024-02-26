@@ -14,7 +14,7 @@ clean_monthly_births_la <- function(dir_raw, dir_save,
   # dir_save <- "data/intermediate/monthly_births/"
   # src_name <- "ONS ad hoc"
   # url_lookup <- "lookups/monthly_births_data_urls.csv"
-  # file_ind <- 3 #row number of monthly_births_urls dataframe that specifies the file to work with
+  # file_ind <- 2 #row number of monthly_births_urls dataframe that specifies the file to work with
   ####
 
   monthly_births_urls <- read.csv(url_lookup, stringsAsFactors = FALSE) %>%
@@ -90,11 +90,12 @@ clean_monthly_births_la <- function(dir_raw, dir_save,
     if(grepl("^\\d+$", eg_month_header)) { # if it has been given as a date in excel, convert this to a date object
       month_header_type <- "date" # use this to determine how to do the final formatting of the output dataframe
       month_headers <- month_headers %>%
-        mutate(across(all_of(names(month_headers)), \(x) as.Date(as.numeric(x),  origin = "1899-12-30")))
+        mutate(across(all_of(names(month_headers)), \(x) as.Date(as.numeric(x),  origin = "1899-12-30")),
+               across(all_of(names(month_headers)), \(x) x %m+% months(1) - 1)) # change from first day of month to last day of month
 
       # check that month_headers starts with the expected date and is in the expected format
-      if (!identical(month_headers[,1], start_date)) {
-        stop(paste0("The first date cell has been translated from an excel date number to ", month_headers[,1], ", but the start date for the file has been given as ", start_date ))
+      if (!identical(floor_date(month_headers[,1], "month"), start_date)) {
+        stop(paste0("The first date cell has been translated from an excel date number to ", floor_date(month_headers[,1], "month"), ", but the start date for the file has been given as ", start_date, " in the monthly_births_data_urls lookup file." ))
       }
       if (!(is.na(month_headers[,2]) &
             is.na(month_headers[,3]))) {
@@ -187,7 +188,6 @@ clean_monthly_births_la <- function(dir_raw, dir_save,
     # Each file has gss codes from different years. Update all codes to 2021
     # This won't work on combined areas (currently "E09000012, E09000001" and "E06000052, E06000053")
     data <- data %>%
-      mutate(id = row_number()) %>%
       recode_gss_codes(col_geog="gss_code",
                        data_cols = "value",
                        fun = "sum",
@@ -195,8 +195,6 @@ clean_monthly_births_la <- function(dir_raw, dir_save,
                        aggregate_data = TRUE,
                        recode_gla_codes = FALSE,
                        code_changes_path = NULL) %>%
-      arrange(id) %>%
-      select(-id) %>%
       tibble()
 
     # most years of data have combined codes "E09000012, E09000001" and "E06000052, E06000053".
