@@ -139,6 +139,7 @@ births_ctry_yearly_by_month <- aggregate_to_region(births_lad_yearly_by_month_no
   mutate(geography = "CTRY21") %>%
   select(gss_code, gss_name, everything())
 
+saveRDS(births_lad_yearly_by_month, fpath$lad_yearly_by_month_output_rds)
 saveRDS(births_rgn_yearly_by_month, fpath$rgn_yearly_by_month_output_rds)
 saveRDS(births_itl_yearly_by_month, fpath$itl_yearly_by_month_output_rds)
 saveRDS(births_ctry_yearly_by_month, fpath$ctry_yearly_by_month_output_rds)
