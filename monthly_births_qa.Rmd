@@ -1,0 +1,124 @@
+---
+title: "Monthly births QA"
+output: html_notebook
+---
+
+
+Check that we have the expected year, gss code and gss name combinations for the monthly and aggregated monthly births
+
+
+Check the monthly births data by comparing yearly aggregations to the annual births data
+
+```{r read_data}
+# Annual births
+births_ctry <- readRDS("data/processed/births_ctry.rds")
+births_rgn <- readRDS("data/processed/births_rgn.rds")
+births_lad <- readRDS("data/processed/births_lad.rds")
+
+# yearly aggregations of monthly births
+# births_lad year ending date is 1st day of month, but monthly ones is last day of month. Change the monthly ones to match
+
+births_monthly_ctry <- readRDS("data/processed/births_ctry_yearly_by_month.rds") %>%
+  mutate(year_ending_date = year_ending_date + 1)
+births_monthly_rgn <- readRDS("data/processed/births_rgn_yearly_by_month.rds") %>%
+  mutate(year_ending_date = year_ending_date + 1)
+births_monthly_lad <- readRDS("data/processed/births_lad_yearly_by_month.rds") %>%
+  mutate(year_ending_date = year_ending_date + 1)
+
+```
+
+```{r combined_lads}
+# make combined LAs in annual data to match aggregated monthly data
+
+lookup <- data.frame(gss_code = c("E09000012", "E09000001", 
+                                  "E06000052", "E06000053"),
+                     combined_gss = c(rep("E09000012, E09000001", 2), 
+                                      rep("E06000052, E06000053", 2)),
+                     combined_name = c(rep("Hackney and City of London", 2), 
+                                       rep("Cornwall and Isles of Scilly", 2))
+                     )
+
+combined <- births_lad %>%
+  filter(gss_code %in% lookup$gss_code) %>%
+  left_join(lookup, by = "gss_code") %>%
+  group_by(across(c(-gss_code, -gss_name, -value))) %>%
+  summarise(value = sum(value)) %>%
+  ungroup() %>%
+  rename(gss_code = combined_gss, gss_name = combined_name) %>%
+  select(gss_code, gss_name, everything())
+
+births_lad <- births_lad %>%
+  filter(!gss_code %in% lookup$gss_code) %>%
+  bind_rows(combined) %>%
+  arrange(gss_code, year_ending_date)
+rm(combined)
+
+```
+
+```{r lads}
+lad <- births_lad %>%
+  left_join(rename(births_monthly_lad, monthly_value = value), by = join_by(gss_code, gss_name, year_ending_date, sex))  %>%
+  filter(!is.na(monthly_value)) %>%
+  select(-source.x, -source.y, -source_url.x, -source_url.y) %>%
+  mutate(diff = monthly_value - value, 
+         percdiff = 100*diff/value,
+         absdiff = abs(diff),
+         abspercdiff = abs(percdiff))
+hist(lad$diff)
+hist(lad$percdiff)
+
+head(count(lad, abspercdiff) %>% arrange(-abspercdiff), 20)
+
+```
+
+There are some very large differences, but only 16 of the rows have differences above 1%. On further investigation of these 16 rows it looks like a set of births has been recorded in South Somerset in the annual births, but Somerset West and Taunton for monthly ones.
+
+
+```{r somerset}
+filter(lad, abspercdiff > 1) %>% 
+  arrange(year_ending_date, gss_code) %>% 
+  select(-geography, -sex) %>%
+  print()
+
+```
+If we remove South Somerset and Somerset West and Taunton from the dataset the histogram of differences looks more reasonable
+
+```{r no_somerset}
+no_somerset <- filter(lad, !gss_code %in% c("E07000189", "E07000246"))
+hist(no_somerset$percdiff)
+
+```
+Do a check on regions:
+
+```{r region}
+rgn <- births_rgn %>%
+  left_join(rename(births_monthly_rgn, monthly_value = value), by = join_by(gss_code, gss_name, year_ending_date, sex))  %>%
+  filter(!is.na(monthly_value)) %>%
+  select(-source.x, -source.y, -source_url.x, -source_url.y, -geography.x, -geography.y) %>%
+  mutate(diff = monthly_value - value, 
+         percdiff = 100*diff/value,
+         absdiff = abs(diff),
+         abspercdiff = abs(percdiff))
+hist(rgn$diff)
+hist(rgn$percdiff)
+
+```
+And on country
+
+```{r country}
+ctry <- births_ctry %>%
+  left_join(rename(births_monthly_ctry, monthly_value = value), by = join_by(gss_code, gss_name, year_ending_date, sex))  %>%
+  filter(!is.na(monthly_value)) %>%
+  select(-source.x, -source.y, -source_url.x, -source_url.y, -geography.x, -geography.y) %>%
+  mutate(diff = monthly_value - value, 
+         percdiff = 100*diff/value,
+         absdiff = abs(diff),
+         abspercdiff = abs(percdiff))
+hist(ctry$diff)
+hist(ctry$percdiff)
+
+
+```
+
+
+
