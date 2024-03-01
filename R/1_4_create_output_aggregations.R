@@ -112,6 +112,7 @@ births_lad_yearly_by_month <- births_lad_monthly %>%
   mutate(roll_sum = roll_sum(value, 12, align = "right", fill = NA)) %>%
   select(-value, -year, -month) %>%
   rename(year_ending_date = month_ending_date, value = roll_sum) %>%
+  mutate(measure = "annual_births") %>%
   filter(!is.na(value))
 
 # ugly adjustments to deal with combined gss codes in monthly births data

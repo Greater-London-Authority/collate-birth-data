@@ -14,7 +14,7 @@ clean_monthly_births_la <- function(dir_raw, dir_save,
   # dir_save <- "data/intermediate/monthly_births/"
   # src_name <- "ONS ad hoc"
   # url_lookup <- "lookups/monthly_births_data_urls.csv"
-  # file_ind <- 2 #row number of monthly_births_urls dataframe that specifies the file to work with
+  # file_ind <- 1 #row number of monthly_births_urls dataframe that specifies the file to work with
   ####
 
   monthly_births_urls <- read.csv(url_lookup, stringsAsFactors = FALSE) %>%
@@ -195,7 +195,8 @@ clean_monthly_births_la <- function(dir_raw, dir_save,
                        aggregate_data = TRUE,
                        recode_gla_codes = FALSE,
                        code_changes_path = NULL) %>%
-      tibble()
+      tibble() %>%
+      mutate(geography = "LAD21")
 
     # most years of data have combined codes "E09000012, E09000001" and "E06000052, E06000053".
     # combine any which aren't so that they match the rest
@@ -247,7 +248,8 @@ clean_monthly_births_la <- function(dir_raw, dir_save,
 
     data <- data %>%
       left_join(la_lookup, by = "gss_code") %>%
-      select(gss_code, gss_name, source, source_url, sex, year, month, month_ending_date, value)
+      mutate(measure = "monthly_births") %>%
+      select(gss_code, gss_name, month_ending_date, year, month, measure, geography, source, source_url, sex, value)
 
     print("cleaned data:")
     print(data, n = 4)
