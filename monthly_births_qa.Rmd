@@ -6,6 +6,39 @@ output: html_notebook
 
 Check that we have the expected year, gss code and gss name combinations for the monthly and aggregated monthly births
 
+```{r}
+library(tidyr)
+
+births_monthly_lad <- readRDS("data/processed/births_lad_monthly.rds")
+
+geogs <- readRDS("lookups/lookup_lsoa_lad.rds") %>%
+  select(gss_code, gss_name) %>%
+  unique() %>%
+  filter(grepl("^E", gss_code)) %>%
+  filter(!gss_code %in% c("E09000012", "E09000001", "E06000052", "E06000053")) %>%
+  bind_rows(data.frame(gss_code = c("E09000012, E09000001", "E06000052, E06000053"), 
+                       gss_name = c("Hackney and City of London", "Cornwall and Isles of Scilly")))
+
+sex <- "persons"
+start_date <- min(births_monthly_lad$month_ending_date)
+print(start_date)
+end_date <- max(births_monthly_lad$month_ending_date)
+print(end_date)
+
+expected_months <- seq(start_date + 1, to = end_date + 1, by="month") - 1
+
+expected_rows_df <- expand_grid(sex, month_ending_date = expected_months, nesting(gss_code = geogs$gss_code, gss_name = geogs$gss_name)) %>%
+  mutate(type = "expected")
+
+matched_df <- full_join(births_monthly_lad, expected_rows_df, by = join_by(gss_code, gss_name, month_ending_date, sex))
+
+unmatched <- matched_df %>%
+  filter(is.na(value) | is.na(type))
+
+if (nrow(unmatched) != 0) stop("there are unmatched rows")
+``` 
+
+
 
 Check the monthly births data by comparing yearly aggregations to the annual births data
 
@@ -36,7 +69,7 @@ lookup <- data.frame(gss_code = c("E09000012", "E09000001",
                                       rep("E06000052, E06000053", 2)),
                      combined_name = c(rep("Hackney and City of London", 2), 
                                        rep("Cornwall and Isles of Scilly", 2))
-                     )
+)
 
 combined <- births_lad %>%
   filter(gss_code %in% lookup$gss_code) %>%
@@ -57,7 +90,7 @@ rm(combined)
 
 ```{r lads}
 lad <- births_lad %>%
-  left_join(rename(births_monthly_lad, monthly_value = value), by = join_by(gss_code, gss_name, year_ending_date, sex))  %>%
+  left_join(rename(births_monthly_lad, monthly_value = value), by = join_by(gss_code, gss_name, year_ending_date, measure, geography, sex))  %>%
   filter(!is.na(monthly_value)) %>%
   select(-source.x, -source.y, -source_url.x, -source_url.y) %>%
   mutate(diff = monthly_value - value, 
@@ -77,7 +110,7 @@ There are some very large differences, but only 16 of the rows have differences 
 ```{r somerset}
 filter(lad, abspercdiff > 1) %>% 
   arrange(year_ending_date, gss_code) %>% 
-  select(-geography, -sex) %>%
+  select(-geography, -sex, -measure) %>%
   print()
 
 ```
