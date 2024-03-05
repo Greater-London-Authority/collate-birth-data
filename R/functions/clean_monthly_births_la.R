@@ -17,11 +17,14 @@ clean_monthly_births_la <- function(dir_raw, dir_save,
   # file_ind <- 1 #row number of monthly_births_urls dataframe that specifies the file to work with
   ####
 
+  # Read in lookup which gives information on the raw data files and how to clean them
+  # This lookup needs updating before any new data can be cleaned
   monthly_births_urls <- read.csv(url_lookup, stringsAsFactors = FALSE) %>%
     mutate(ext = gsub(".*\\.", "\\.", basename(url)),
            fp_raw = paste0(dir_raw,"/",gla_filename, ext),
            fp_save = paste0(dir_save,"/",gla_filename, ".rds"))
 
+  # All the cleaning code is contained in this loop
   for (file_ind in seq_len(nrow(monthly_births_urls))) { # TODO is there a more elegant way to do this than in a for loop?
 
     file_info <- monthly_births_urls[file_ind,]
@@ -34,11 +37,11 @@ clean_monthly_births_la <- function(dir_raw, dir_save,
     print(paste("Start date (YYYY-MM-DD):", start_date))
     print(paste("End date (YYYY-MM-DD):", end_date))
 
-    # create lookup for date of last day of month for each month in the data
+    # create lookup to get month_ending_date from month name (set as first day of next month for consistency with year end dates elsewhere in project)
     n_months <- interval(start_date, end_date + 1) / months(1)
-    month_ends <- seq(start_date, by="month", length.out = n_months + 1) - 1
+    month_ends <- seq(start_date, by="month", length.out = n_months + 1)
     months_lookup <- data.frame(month_ending_date = month_ends[-1]) %>%
-      mutate(month = tolower(months(month_ending_date)))
+      mutate(month = tolower(months(month_ending_date - 1)))
     rm(month_ends, n_months)
 
     # start_cell is given as an excel cell reference e.g. D6. Convert to numeric row and col indicies.
@@ -46,11 +49,10 @@ clean_monthly_births_la <- function(dir_raw, dir_save,
     start_col <- which(letters == tolower(start_col_letter))
     start_row <- as.numeric(gsub("\\D*","",file_info$births_values_start_cell))
 
-    # check that the start cell contains a number, and that the cell to the left and above are not numbers
+    # Data quality check: the start cell contains a number, and the cell to the left and above are not numbers
     start_cell <- raw_data[start_row, start_col] %>% pull()
     left <- raw_data[start_row, start_col - 1] %>% pull()
     above <- raw_data[start_row - 1, start_col] %>% pull()
-
     if (!grepl("^\\d+$", start_cell)) stop("The start cell does not contain a number") #TODO this test fails if there are commas or decimals in the number. So far as no files contain them but this might not always be the case...
     if (grepl("^\\d+$", left)) stop("The start cell is not the first cell with a number, the one to the left is a number too.") #TODO this test doesn't work if there are commas or decimals in the number. Might have to change that but the regex will be complicated.
     if (grepl("^\\d+$", above)) stop("The start cell is not the first cell with a number, the one above is a number too.") #TODO this test doesn't work if there are commas or decimals in the number. Might have to change that but the regex will be complicated.
@@ -70,8 +72,8 @@ clean_monthly_births_la <- function(dir_raw, dir_save,
       raw_data <- raw_data[-(start_row-2),]
       start_row <- start_row - 1
     }
-    # create column headers that contain both the month and the sex.
 
+    # create column headers that contain both the month and the sex.
     births_cols <- raw_data[(start_row - 2):nrow(raw_data),start_col:ncol(raw_data)] %>%
       as.data.frame()
 
@@ -91,10 +93,10 @@ clean_monthly_births_la <- function(dir_raw, dir_save,
       month_header_type <- "date" # use this to determine how to do the final formatting of the output dataframe
       month_headers <- month_headers %>%
         mutate(across(all_of(names(month_headers)), \(x) as.Date(as.numeric(x),  origin = "1899-12-30")),
-               across(all_of(names(month_headers)), \(x) x %m+% months(1) - 1)) # change from first day of month to last day of month
+               across(all_of(names(month_headers)), \(x) x %m+% months(1))) # change to first day of next month as 'last' day of the month
 
       # check that month_headers starts with the expected date and is in the expected format
-      if (!identical(floor_date(month_headers[,1], "month"), start_date)) {
+      if (!identical(month_headers[,1] %m-% months(1), start_date)) {
         stop(paste0("The first date cell has been translated from an excel date number to ", floor_date(month_headers[,1], "month"), ", but the start date for the file has been given as ", start_date, " in the monthly_births_data_urls lookup file." ))
       }
       if (!(is.na(month_headers[,2]) &
@@ -146,7 +148,6 @@ clean_monthly_births_la <- function(dir_raw, dir_save,
 
     data <- bind_cols(geog_cols, births_cols) %>%
       filter(!is.na(get(last_total_col))) %>% # ugly hack to get rid of any notes ONS might have written below data
-      #pivot_longer(get(first_births_col):get(last_births_col), names_to = "month_sex", values_to = "value") %>%
       pivot_longer(matches("total|female|male"), names_to = "month_sex", values_to = "value") %>%
       mutate(month = gsub("_.*", "", month_sex),
              sex = gsub(".*_", "", month_sex),
@@ -157,13 +158,11 @@ clean_monthly_births_la <- function(dir_raw, dir_save,
       select(-month_sex)
 
     if (month_header_type == "name") {
-      data <- left_join(data, months_lookup, by = "month") %>%
-        mutate(year = year(month_ending_date))
+      data <- left_join(data, months_lookup, by = "month")
     } else {
       data <- data %>%
         mutate(month_ending_date = as.Date(month),
-               month = months(month_ending_date),
-               year = year(month_ending_date))
+               month = months(month_ending_date - 1))
     }
 
 
@@ -249,7 +248,7 @@ clean_monthly_births_la <- function(dir_raw, dir_save,
     data <- data %>%
       left_join(la_lookup, by = "gss_code") %>%
       mutate(measure = "monthly_births") %>%
-      select(gss_code, gss_name, month_ending_date, year, month, measure, geography, source, source_url, sex, value)
+      select(gss_code, gss_name, month_ending_date, month, measure, geography, source, source_url, sex, value)
 
     print("cleaned data:")
     print(data, n = 4)

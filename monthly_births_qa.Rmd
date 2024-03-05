@@ -8,6 +8,7 @@ Check that we have the expected year, gss code and gss name combinations for the
 
 ```{r}
 library(tidyr)
+library(dplyr)
 
 births_monthly_lad <- readRDS("data/processed/births_lad_monthly.rds")
 
@@ -49,14 +50,9 @@ births_rgn <- readRDS("data/processed/births_rgn.rds")
 births_lad <- readRDS("data/processed/births_lad.rds")
 
 # yearly aggregations of monthly births
-# births_lad year ending date is 1st day of month, but monthly ones is last day of month. Change the monthly ones to match
-
-births_monthly_ctry <- readRDS("data/processed/births_ctry_yearly_by_month.rds") %>%
-  mutate(year_ending_date = year_ending_date + 1)
-births_monthly_rgn <- readRDS("data/processed/births_rgn_yearly_by_month.rds") %>%
-  mutate(year_ending_date = year_ending_date + 1)
-births_monthly_lad <- readRDS("data/processed/births_lad_yearly_by_month.rds") %>%
-  mutate(year_ending_date = year_ending_date + 1)
+births_monthly_ctry <- readRDS("data/processed/births_ctry_yearly_by_month.rds") 
+births_monthly_rgn <- readRDS("data/processed/births_rgn_yearly_by_month.rds")
+births_monthly_lad <- readRDS("data/processed/births_lad_yearly_by_month.rds")
 
 ```
 
