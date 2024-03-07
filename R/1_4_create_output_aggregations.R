@@ -73,9 +73,8 @@ births_lad_monthly <- readRDS(fpath$lad_monthly_output_rds)
 
 # ugly adjustments to deal with combined gss codes in monthly births data
 births_lad_monthly_no_combined <- births_lad_monthly %>%
-  mutate(gss_code = substr(gss_code ,1, 9), # use only the first gss code in the combined areas for the aggregations
-         gss_name = ifelse(gss_code == "E06000052","Cornwall", gss_name),
-         gss_name = ifelse(gss_code == "E09000012", "Hackney", gss_name))
+  mutate(gss_code = substr(gss_code ,1, 9)) %>% # use only the first gss code in the combined areas for the aggregations to match lookup
+  select(-gss_name)
 
 births_rgn_monthly <- aggregate_to_region(births_lad_monthly_no_combined,
                                   readRDS(fpath$lookup_lad_rgn)) %>%
@@ -117,9 +116,8 @@ births_lad_yearly_by_month <- births_lad_monthly %>%
 
 # ugly adjustments to deal with combined gss codes in monthly births data
 births_lad_yearly_by_month_no_combined <- births_lad_yearly_by_month %>%
-  mutate(gss_code = substr(gss_code ,1, 9), # use only the first gss code in the combined areas for the aggregations
-         gss_name = ifelse(gss_code == "E06000052","Cornwall", gss_name),
-         gss_name = ifelse(gss_code == "E09000012", "Hackney", gss_name))
+  mutate(gss_code = substr(gss_code ,1, 9)) %>% # use only the first gss code in the combined areas for the aggregations
+         select(-gss_name)
 
 births_rgn_yearly_by_month <- aggregate_to_region(births_lad_yearly_by_month_no_combined,
                                           readRDS(fpath$lookup_lad_rgn)) %>%

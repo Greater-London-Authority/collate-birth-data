@@ -6,10 +6,14 @@ output: html_notebook
 
 Check that we have the expected year, gss code and gss name combinations for the monthly and aggregated monthly births
 
-```{r}
+```{r setup}
 library(tidyr)
 library(dplyr)
+source("R/functions/aggregate_to_combined_las.R")
+```
 
+
+```{r}
 births_monthly_lad <- readRDS("data/processed/births_lad_monthly.rds")
 
 geogs <- readRDS("lookups/lookup_lsoa_lad.rds") %>%
@@ -37,7 +41,7 @@ unmatched <- matched_df %>%
   filter(is.na(value) | is.na(type))
 
 if (nrow(unmatched) != 0) stop("there are unmatched rows")
-``` 
+```
 
 
 
@@ -47,7 +51,9 @@ Check the monthly births data by comparing yearly aggregations to the annual bir
 # Annual births
 births_ctry <- readRDS("data/processed/births_ctry.rds")
 births_rgn <- readRDS("data/processed/births_rgn.rds")
-births_lad <- readRDS("data/processed/births_lad.rds")
+births_lad <- readRDS("data/processed/births_lad.rds") %>%
+  aggregate_to_combined_las() # make combined LAs in annual data to match aggregated monthly data
+
 
 # yearly aggregations of monthly births
 births_monthly_ctry <- readRDS("data/processed/births_ctry_yearly_by_month.rds") 
@@ -56,33 +62,6 @@ births_monthly_lad <- readRDS("data/processed/births_lad_yearly_by_month.rds")
 
 ```
 
-```{r combined_lads}
-# make combined LAs in annual data to match aggregated monthly data
-
-lookup <- data.frame(gss_code = c("E09000012", "E09000001", 
-                                  "E06000052", "E06000053"),
-                     combined_gss = c(rep("E09000012, E09000001", 2), 
-                                      rep("E06000052, E06000053", 2)),
-                     combined_name = c(rep("Hackney and City of London", 2), 
-                                       rep("Cornwall and Isles of Scilly", 2))
-)
-
-combined <- births_lad %>%
-  filter(gss_code %in% lookup$gss_code) %>%
-  left_join(lookup, by = "gss_code") %>%
-  group_by(across(c(-gss_code, -gss_name, -value))) %>%
-  summarise(value = sum(value)) %>%
-  ungroup() %>%
-  rename(gss_code = combined_gss, gss_name = combined_name) %>%
-  select(gss_code, gss_name, everything())
-
-births_lad <- births_lad %>%
-  filter(!gss_code %in% lookup$gss_code) %>%
-  bind_rows(combined) %>%
-  arrange(gss_code, year_ending_date)
-rm(combined)
-
-```
 
 ```{r lads}
 lad <- births_lad %>%

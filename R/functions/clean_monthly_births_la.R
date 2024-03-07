@@ -4,6 +4,7 @@ library(dplyr)
 library(lubridate)
 library(stringr)
 source("R/functions/recode_gss.R")
+source("R/functions/aggregate_to_combined_las.R")
 
 clean_monthly_births_la <- function(dir_raw, dir_save,
                                     src_name = "ONS ad hoc",
@@ -185,7 +186,6 @@ clean_monthly_births_la <- function(dir_raw, dir_save,
       mutate(gss_code = str_replace(gss_code, pattern = intToUtf8(8218), replacement = ",")) # some ONS files use a 'Single Low-9 Quotation Mark' instead of a comma in the combined GSS code areas
 
     # Each file has gss codes from different years. Update all codes to 2021
-    # This won't work on combined areas (currently "E09000012, E09000001" and "E06000052, E06000053")
     data <- data %>%
       recode_gss_codes(col_geog="gss_code",
                        data_cols = "value",
@@ -199,47 +199,18 @@ clean_monthly_births_la <- function(dir_raw, dir_save,
 
     # most years of data have combined codes "E09000012, E09000001" and "E06000052, E06000053".
     # combine any which aren't so that they match the rest
-
-    Hackney_CoL <- c("E09000012", "E09000001")
-    Hackney_CoL_name <- "Hackney and City of London"
-    Cornwall_Scilly <- c("E06000052", "E06000053")
-    Cornwall_Scilly_name <- "Cornwall and Isles of Scilly"
-
-    if (all(Hackney_CoL %in% data$gss_code)) {
-      combined <- filter(data, gss_code %in% Hackney_CoL) %>%
-        group_by(across(c(-gss_code, -value))) %>%
-        summarise(value = sum(value)) %>%
-        mutate(gss_code = paste(Hackney_CoL, collapse = ", ")) %>%
-        ungroup()
-
-      data <- data %>%
-        filter(!gss_code %in% Hackney_CoL) %>%
-        bind_rows(combined)
-    }
-
-    if (all(Cornwall_Scilly %in% data$gss_code)) {
-      combined <- filter(data, gss_code %in% Cornwall_Scilly) %>%
-        group_by(across(c(-gss_code, -value))) %>%
-        summarise(value = sum(value)) %>%
-        mutate(gss_code = paste(Cornwall_Scilly, collapse = ", ")) %>%
-        ungroup()
-
-      data <- data %>%
-        filter(!gss_code %in% Cornwall_Scilly) %>%
-        bind_rows(combined)
-    }
-
     data <- data %>%
-      arrange(gss_code, month_ending_date, sex)
+      aggregate_to_combined_las()
 
     # Take LA names from the lad_rgn lookup file (uses 2021 geography) as the ONS data doesn't have consistent naming across files
     la_lookup <- readRDS("lookups/lookup_lad_rgn.rds") %>%
       select(gss_code, gss_name)
+    combined_las_lookup <- readRDS("lookups/combined_la_codes_lookup.rds") %>%
+      select(gss_code = combined_gss, gss_name = combined_name) %>%
+      unique()
 
-    combined_gss <- data.frame(gss_code = c(paste(Hackney_CoL, collapse = ", "), paste(Cornwall_Scilly, collapse = ", ")),
-                               gss_name = c(Hackney_CoL_name, Cornwall_Scilly_name))
-
-    la_lookup <- bind_rows(la_lookup, combined_gss)
+    la_lookup <- la_lookup %>%
+      bind_rows(combined_las_lookup)
 
     if (nrow(filter(data, !gss_code %in% la_lookup$gss_code)) != 0) {
       stop("there are gss codes in the raw data which aren't in the project's lad to region lookup file")
@@ -248,7 +219,8 @@ clean_monthly_births_la <- function(dir_raw, dir_save,
     data <- data %>%
       left_join(la_lookup, by = "gss_code") %>%
       mutate(measure = "monthly_births") %>%
-      select(gss_code, gss_name, month_ending_date, month, measure, geography, source, source_url, sex, value)
+      select(gss_code, gss_name, month_ending_date, month, measure, geography, source, source_url, sex, value) %>%
+      arrange(gss_code, month_ending_date, sex)
 
     print("cleaned data:")
     print(data, n = 4)
