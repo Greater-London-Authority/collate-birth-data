@@ -16,13 +16,17 @@ source("R/functions/aggregate_to_combined_las.R")
 ```{r}
 births_monthly_lad <- readRDS("data/processed/births_lad_monthly.rds")
 
+combined_geogs <- readRDS("lookups/combined_la_codes_lookup.rds")
+single_codes <- unique(combined_geogs$gss_code)
+combined_geogs <- combined_geogs %>%
+  select(gss_code = combined_gss, gss_name = combined_name) %>%
+  unique()
+
 geogs <- readRDS("lookups/lookup_lsoa_lad.rds") %>%
   select(gss_code, gss_name) %>%
   unique() %>%
-  filter(grepl("^E", gss_code)) %>%
-  filter(!gss_code %in% c("E09000012", "E09000001", "E06000052", "E06000053")) %>%
-  bind_rows(data.frame(gss_code = c("E09000012, E09000001", "E06000052, E06000053"), 
-                       gss_name = c("Hackney and City of London", "Cornwall and Isles of Scilly")))
+  filter(grepl("^E", gss_code) & !gss_code %in% single_codes) %>% 
+  bind_rows(combined_geogs)
 
 sex <- "persons"
 start_date <- min(births_monthly_lad$month_ending_date)
@@ -41,7 +45,8 @@ unmatched <- matched_df %>%
   filter(is.na(value) | is.na(type))
 
 if (nrow(unmatched) != 0) stop("there are unmatched rows")
-```
+if (nrow(births_monthly_lad) != nrow(expected_rows_df)) stop("there aren't the right number of rows")
+``` 
 
 
 
