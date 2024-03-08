@@ -25,8 +25,8 @@ clean_monthly_births_la <- function(dir_raw, dir_save,
            fp_raw = paste0(dir_raw,"/",gla_filename, ext),
            fp_save = paste0(dir_save,"/",gla_filename, ".rds"))
 
-  # All the cleaning code is contained in this loop
-  for (file_ind in seq_len(nrow(monthly_births_urls))) { # TODO is there a more elegant way to do this than in a for loop?
+  # The rest of the code is contained in this loop which cleans and saves each file
+  for (file_ind in seq_len(nrow(monthly_births_urls))) {
 
     file_info <- monthly_births_urls[file_ind,]
     print(paste("CLEANING MONTHLY BIRTHS FILE NUMBER", file_ind))
@@ -44,6 +44,8 @@ clean_monthly_births_la <- function(dir_raw, dir_save,
     months_lookup <- data.frame(month_ending_date = month_ends[-1]) %>%
       mutate(month = tolower(months(month_ending_date - 1)))
     rm(month_ends, n_months)
+
+    #### Check the shape of the data and get rid of any empty rows ####
 
     # start_cell is given as an excel cell reference e.g. D6. Convert to numeric row and col indicies.
     start_col_letter <- gsub("\\d*", "", file_info$births_values_start_cell)
@@ -74,7 +76,9 @@ clean_monthly_births_la <- function(dir_raw, dir_save,
       start_row <- start_row - 1
     }
 
-    # create column headers that contain both the month and the sex.
+    ####  create column headers that combine the month and the sex e.g. september_female. ####
+
+    # separate out the headers from the data
     births_cols <- raw_data[(start_row - 2):nrow(raw_data),start_col:ncol(raw_data)] %>%
       as.data.frame()
 
@@ -133,6 +137,8 @@ clean_monthly_births_la <- function(dir_raw, dir_save,
     names(births_cols) <- headers
     rm(headers)
 
+    #### name the geography columns ####
+
     geog_cols <- raw_data[(start_row-1):nrow(raw_data), 1:(start_col-1)]
 
     if (all(is.na(geog_cols[1,]))) { # 2014 to 2015 ONS file doesn't have geography column names
@@ -142,6 +148,8 @@ clean_monthly_births_la <- function(dir_raw, dir_save,
     }
 
     geog_cols <- geog_cols[-1,]
+
+    #### transform data into long format and add some extra columns (month_ending_date, info about the file source etc) ####
 
     first_births_col <- names(births_cols)[1]
     last_births_col <- names(births_cols)[ncol(births_cols)]
@@ -155,7 +163,8 @@ clean_monthly_births_la <- function(dir_raw, dir_save,
              sex = ifelse(sex == "total", "persons", sex),
              value = as.numeric(value),
              source = src_name,
-             source_url = file_info$url) %>%
+             source_url = file_info$url,
+             measure = "monthly_births") %>%
       select(-month_sex)
 
     if (month_header_type == "name") {
@@ -166,6 +175,7 @@ clean_monthly_births_la <- function(dir_raw, dir_save,
                month = months(month_ending_date - 1))
     }
 
+    #### rename columns as different ONS data files use different naming conventions ####
 
     names(data) <- tolower(names(data))
 
@@ -180,6 +190,9 @@ clean_monthly_births_la <- function(dir_raw, dir_save,
     names(rename_list_inv) <- rename_list
     data <- rename(data, all_of(rename_list_inv))
 
+
+    #### Make geographies consistent: Convert to 2021 codes, use lookup file to give LA names, deal with combined LAs ####
+
     data <- data %>%
       filter(grepl("^(E06|E07|E08|E09)", gss_code)) %>% # only keep LAs in England
       select(-gss_name) %>% # these are replaced below with our own lookup
@@ -192,8 +205,7 @@ clean_monthly_births_la <- function(dir_raw, dir_save,
                        fun = "sum",
                        recode_to_year = 2021,
                        aggregate_data = TRUE,
-                       recode_gla_codes = FALSE,
-                       code_changes_path = NULL) %>%
+                       code_changes_path = "lookups/code_changes_lookup.rds") %>%
       tibble() %>%
       mutate(geography = "LAD21")
 
@@ -217,8 +229,10 @@ clean_monthly_births_la <- function(dir_raw, dir_save,
     }
 
     data <- data %>%
-      left_join(la_lookup, by = "gss_code") %>%
-      mutate(measure = "monthly_births") %>%
+      left_join(la_lookup, by = "gss_code")
+
+    #### final tidy up and save ####
+    data <- data %>%
       select(gss_code, gss_name, month_ending_date, month, measure, geography, source, source_url, sex, value) %>%
       arrange(gss_code, month_ending_date, sex)
 
