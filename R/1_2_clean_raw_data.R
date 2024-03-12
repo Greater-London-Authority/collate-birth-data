@@ -37,7 +37,8 @@ clean_births_calendar_year_lsoa_nomis(fp_raw = fpath$raw_births_cy_lsoa,
 clean_monthly_births_la(dir_raw = fpath$dir_raw_monthly_births ,
                         dir_save = fpath$dir_intermediate_monthly_births,
                         src_name = "ONS ad hoc",
-                        url_lookup = fpath$monthly_births_urls)
+                        url_lookup = fpath$monthly_births_urls,
+                        gss_code_year = 2021)
 
 aggregate_lsoa11_to_lad(fp_lsoa = fpath$births_my_lsoa_1991_2017,
                         fp_save = fpath$births_my_lad_1991_2017,

@@ -5,16 +5,19 @@ library(lubridate)
 library(stringr)
 source("R/functions/recode_gss.R")
 source("R/functions/aggregate_to_combined_las.R")
+source("R/functions/qa_monthly_births_output.R")
 
 clean_monthly_births_la <- function(dir_raw, dir_save,
                                     src_name = "ONS ad hoc",
-                                    url_lookup) {
+                                    url_lookup,
+                                    gss_code_year) {
 
   ####  uncomment to run manually
   # dir_raw <- "data/raw/monthly_births/"
   # dir_save <- "data/intermediate/monthly_births/"
   # src_name <- "ONS ad hoc"
-  # url_lookup <- "lookups/monthly_births_data_urls.csv"
+  # url_lookup <- "lookups/monthly_births_data_urls.csv
+  # gss_code_year <- 2021
   # file_ind <- 1 #row number of monthly_births_urls dataframe that specifies the file to work with
   ####
 
@@ -191,19 +194,40 @@ clean_monthly_births_la <- function(dir_raw, dir_save,
     data <- rename(data, all_of(rename_list_inv))
 
 
-    #### Make geographies consistent: Convert to 2021 codes, use lookup file to give LA names, deal with combined LAs ####
+    #### Make geographies consistent: Convert to specified year for codes, use lookup file to give LA names, deal with combined LAs ####
 
     data <- data %>%
       filter(grepl("^(E06|E07|E08|E09)", gss_code)) %>% # only keep LAs in England
       select(-gss_name) %>% # these are replaced below with our own lookup
       mutate(gss_code = str_replace(gss_code, pattern = intToUtf8(8218), replacement = ",")) # some ONS files use a 'Single Low-9 Quotation Mark' instead of a comma in the combined GSS code areas
 
-    # Each file has gss codes from different years. Update all codes to 2021
+    # Check that there are no codes that can't be handled
+    la_codes <- readRDS("lookups/lookup_lsoa_lad.rds") %>%
+      select(gss_code) %>%
+      unique()
+
+    old_la_codes <- readRDS("lookups/code_changes_lookup.rds") %>%
+      select(gss_code = changed_from_code) %>%
+      unique()
+
+    combined_codes <- readRDS("lookups/combined_la_codes_lookup.rds") %>%
+      select(gss_code = combined_gss) %>%
+      unique()
+
+    allowed_codes <- bind_rows(la_codes, old_la_codes, combined_codes) %>% pull()
+    rm(la_codes, old_la_codes, combined_codes)
+
+    if (any(!(unique(data$gss_code) %in% allowed_codes))) {
+      alarming_codes <- unique(data$gss_code)[!(unique(data$gss_code) %in% allowed_codes)]
+      stop(paste0("The following GSS codes can't be handled. They may need to be added to the code_changes_lookup.rds file: '", paste(alarming_codes, collapse = "'; '"), "'"))
+    }
+
+    # Each file has gss codes from different years. Update all codes to specified year
     data <- data %>%
       recode_gss_codes(col_geog="gss_code",
                        data_cols = "value",
                        fun = "sum",
-                       recode_to_year = 2021,
+                       recode_to_year = gss_code_year,
                        aggregate_data = TRUE,
                        code_changes_path = "lookups/code_changes_lookup.rds") %>%
       tibble() %>%
@@ -214,7 +238,7 @@ clean_monthly_births_la <- function(dir_raw, dir_save,
     data <- data %>%
       aggregate_to_combined_las()
 
-    # Take LA names from the lad_rgn lookup file (uses 2021 geography) as the ONS data doesn't have consistent naming across files
+    # Take LA names from the lad_rgn lookup file as the ONS data doesn't have consistent naming across files
     la_lookup <- readRDS("lookups/lookup_lad_rgn.rds") %>%
       select(gss_code, gss_name)
     combined_las_lookup <- readRDS("lookups/combined_la_codes_lookup.rds") %>%
@@ -231,10 +255,14 @@ clean_monthly_births_la <- function(dir_raw, dir_save,
     data <- data %>%
       left_join(la_lookup, by = "gss_code")
 
-    #### final tidy up and save ####
+    #### final tidy up ####
     data <- data %>%
       select(gss_code, gss_name, month_ending_date, month, measure, geography, source, source_url, sex, value) %>%
       arrange(gss_code, month_ending_date, sex)
+
+    ####  QA and save ####
+
+    qa_monthly_births_output(data)
 
     print("cleaned data:")
     print(data, n = 4)
