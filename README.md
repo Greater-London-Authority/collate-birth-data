@@ -33,7 +33,7 @@ sources drawn from are:
 
 4.  Live births by month, sex and area of usual residence of mother,
     England and Wales - a series of ad hoc releases of monthly births at
-    local authority level from September 2002 onward. Links to these
+    local authority level from September 2009 onward. Links to these
     releases are given below.
 
 While calendar year births data for local authorities is available for

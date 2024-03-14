@@ -28,7 +28,7 @@ The repository initially contains code for pulling together data from four separ
 
 3. [Live births in England and Wales for small geographic areas](https://www.nomisweb.co.uk/query/construct/summary.asp?mode=construct&version=0&dataset=206) - births by (2011) LSOA for calendar year period from 2013 onward.
 
-4. Live births by month, sex and area of usual residence of mother, England and Wales - a series of ad hoc releases of monthly births at local authority level from September 2002 onward. Links to these releases are given below.
+4. Live births by month, sex and area of usual residence of mother, England and Wales - a series of ad hoc releases of monthly births at local authority level from September 2009 onward. Links to these releases are given below.
 
 While calendar year births data for local authorities is available for local earlier periods from the [ONS website](https://www.ons.gov.uk/peoplepopulationandcommunity/birthsdeathsandmarriages/livebirths/datasets/birthsummarytables), this data has not yet been included here due to the complications caused by:
 
