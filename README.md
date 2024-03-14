@@ -6,14 +6,14 @@
 <!-- badges: start -->
 <!-- badges: end -->
 
-This repository is intended to host a scripts and functions to download
+This repository is intended to host scripts and functions to download
 and process various birth datasets published by the Office for National
 Statistics.
 
 The repository initially contains code for pulling together data from
-three separately published sources to create a time series of annual
-births on current geographies. Outputs from this process are published
-on the [London
+four separately published sources to create a time series of monthly and
+annual births on current geographies. Outputs from this process are
+published on the [London
 Datastore](https://data.london.gov.uk/dataset/annual-birth-series). The
 sources drawn from are:
 
@@ -30,6 +30,11 @@ sources drawn from are:
 3.  [Live births in England and Wales for small geographic
     areas](https://www.nomisweb.co.uk/query/construct/summary.asp?mode=construct&version=0&dataset=206) -
     births by (2011) LSOA for calendar year period from 2013 onward.
+
+4.  Live births by month, sex and area of usual residence of mother,
+    England and Wales - a series of ad hoc releases of monthly births at
+    local authority level from September 2002 onward. Links to these
+    releases are given below.
 
 While calendar year births data for local authorities is available for
 local earlier periods from the [ONS
@@ -53,9 +58,99 @@ from
 
     1__run_all__collate_births_lad_persons.R
 
+The script for downloading and cleaning the monthly births and must be
+manually updated with each ONS data release to give the URL for the new
+data and account for any changes in format in the downloaded file.
+
 Outputs are saved in
 
     data/processed/
+
+## Updating monthly births
+
+This process requires some manual editing. Ad hoc releases to date have
+occured each year some time between March and June for data covering the
+year ending August two calendar years previously.
+
+1.  Search the ONS website for ‘Live births by month, sex and area of
+    usual residence of mother, England and Wales’ to find any new
+    releases.
+
+2.  Copy the URL for the data download into the
+    ‘lookups/monthly_births_data_urls.csv’ file. Fill in the other
+    columns in this file for the new data.
+
+3.  It is recommended to run the clean_monthly_births_la.R function
+    manually on the new data initially. Uncomment the variable setting
+    code at the top to set the function parameters manually (remember to
+    set file_ind to the row number of the new data in the lookup file)
+    and run the rest of the function. The code does a lot of QA steps,
+    but it would also be wise to look over the output data to check the
+    cleaning has worked as intended. If it doesn’t run or outputs aren’t
+    right the code will need to be altered (without breaking it for
+    previous years of data). Remember to re-comment out the variable
+    setting code chunk at the top when finished. The code can now be run
+    from the 1\_\_run_all\_\_collate_births_lad.R function.
+
+4.  Geographies: If there have been boundary changes since the last run
+    these will need to be recorded in the code_changes_lookup.rds file
+    which is created in create_code_changes_lookup.R. The gss_code_year
+    input to the clean_monthly_births function must be the same as the
+    boundary year in the “lookups/lookup_lsoa_lad.rds” (currently 2021).
+    The recode_gss.R function is currently unable to recode LAs
+    backwards in time so if there are boundary changes in the monthly
+    data, but the lookup_losa_lad.rds is still on older codes then this
+    will need to be addressed. N.B. Any code changes to City of London
+    (E09000001), Hackney (E09000012), Cornwall (E06000052), or Isles of
+    Scilly (E06000053) will break the current code as these LAs are
+    combined in the data.
+
+5.  Push the changes up to the github repo.
+
+## Monthly births notes
+
+- The outputs are currently only for LAs in England as the code changes
+  lookup file currently only covers LAs in England. The ONS data
+  contains LAs in Wales as well, so these could be incorporated into the
+  outputs in future.
+
+- Some births in the monthly data between 2011 and 2015 appear to have
+  been moved from South Somerset to Somerset West and Taunton when
+  compared to the ONS mid-year population estimates components of
+  change.
+
+## List of monthly births ad-hoc releases
+
+1.  [Live births, England and Wales: September 2009 to August
+    2014](https://www.ons.gov.uk/peoplepopulationandcommunity/birthsdeathsandmarriages/livebirths/adhocs/1726livebirthsenglandandwalesseptember2009toaugust2014)
+
+2.  [Live births by month, sex and area of usual residence of Mother,
+    England and Wales, September 2014 to August 2015,
+    final](https://www.ons.gov.uk/peoplepopulationandcommunity/birthsdeathsandmarriages/livebirths/adhocs/006871livebirthsbymonthsexandareaofusualresidenceofmotherenglandandwalesseptember2014toaugust2015)
+
+3.  [Live births by month, sex and area of usual residence of mother,
+    England and Wales, September 2015 to August 2016,
+    final](https://www.ons.gov.uk/peoplepopulationandcommunity/birthsdeathsandmarriages/livebirths/adhocs/008449livebirthsbymonthsexandareaofusualresidenceofmotherenglandandwalesseptember2015toaugust2016)
+
+4.  [Live births by month, sex and area of usual residence of mother,
+    England and Wales, September 2016 to August 2017,
+    final](https://www.ons.gov.uk/peoplepopulationandcommunity/birthsdeathsandmarriages/livebirths/adhocs/009923livebirthsbymonthsexandareaofusualresidenceofmotherenglandandwalesseptember2016toaugust2017final)
+
+5.  [Live births by month, sex and area of usual residence of mother,
+    England and Wales, September 2017 to August
+    2018](https://www.ons.gov.uk/peoplepopulationandcommunity/birthsdeathsandmarriages/livebirths/adhocs/11467livebirthsbymonthsexandareaofusualresidenceofmotherenglandandwalesseptember2017toaugust2018)
+
+6.  [Live births by month, sex and area of usual residence of mother,
+    England and Wales: September 2018 to August
+    2019](https://www.ons.gov.uk/peoplepopulationandcommunity/birthsdeathsandmarriages/livebirths/adhocs/13050livebirthsbymonthsexandareaofusualresidenceofmotherenglandandwalesseptember2018toaugust2019)
+
+7.  [Live births by month, sex and area of usual residence of mother,
+    England and Wales: September 2019 to August
+    2020](https://www.ons.gov.uk/peoplepopulationandcommunity/birthsdeathsandmarriages/livebirths/adhocs/14756livebirthsbymonthsexandareaofusualresidenceofmotherenglandandwalesseptember2019toaugust2020)
+
+8.  [Live births by month, sex and area of usual residence of mother,
+    England and Wales, September 2020 to August
+    2021](https://www.ons.gov.uk/peoplepopulationandcommunity/birthsdeathsandmarriages/livebirths/adhocs/1077livebirthsbymonthsexandareaofusualresidenceofmotherenglandandwalesseptember2020toaugust2021)
 
 ## To do
 
@@ -82,31 +177,3 @@ level:
 4.  [Live births in England and Wales for small geographic
     areas](https://www.nomisweb.co.uk/query/construct/summary.asp?mode=construct&version=0&dataset=206) -
     calendar year periods
-
-#### Add process to create consolidated series of births by month for local authorities
-
-Data for individual years has been published since 2014-15.
-
-1.  [Live births by month, sex and area of usual residence of Mother,
-    England and Wales, September 2014 to August 2015,
-    final](https://www.ons.gov.uk/peoplepopulationandcommunity/birthsdeathsandmarriages/livebirths/adhocs/006871livebirthsbymonthsexandareaofusualresidenceofmotherenglandandwalesseptember2014toaugust2015)
-
-2.  [Live births by month, sex and area of usual residence of mother,
-    England and Wales, September 2015 to August 2016,
-    final](https://www.ons.gov.uk/peoplepopulationandcommunity/birthsdeathsandmarriages/livebirths/adhocs/008449livebirthsbymonthsexandareaofusualresidenceofmotherenglandandwalesseptember2015toaugust2016)
-
-3.  [Live births by month, sex and area of usual residence of mother,
-    England and Wales, September 2016 to August 2017,
-    final](https://www.ons.gov.uk/peoplepopulationandcommunity/birthsdeathsandmarriages/livebirths/adhocs/009923livebirthsbymonthsexandareaofusualresidenceofmotherenglandandwalesseptember2016toaugust2017final)
-
-4.  [Live births by month, sex and area of usual residence of mother,
-    England and Wales, September 2017 to August
-    2018](https://www.ons.gov.uk/peoplepopulationandcommunity/birthsdeathsandmarriages/livebirths/adhocs/11467livebirthsbymonthsexandareaofusualresidenceofmotherenglandandwalesseptember2017toaugust2018)
-
-5.  [Live births by month, sex and area of usual residence of mother,
-    England and Wales: September 2018 to August
-    2019](https://www.ons.gov.uk/peoplepopulationandcommunity/birthsdeathsandmarriages/livebirths/adhocs/13050livebirthsbymonthsexandareaofusualresidenceofmotherenglandandwalesseptember2018toaugust2019)
-
-6.  [Live births by month, sex and area of usual residence of mother,
-    England and Wales: September 2019 to August
-    2020](https://www.ons.gov.uk/peoplepopulationandcommunity/birthsdeathsandmarriages/livebirths/adhocs/14756livebirthsbymonthsexandareaofusualresidenceofmotherenglandandwalesseptember2019toaugust2020)
