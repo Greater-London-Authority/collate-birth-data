@@ -1,8 +1,13 @@
+library(readr)
+library(dplyr)
+
 fpath <- list(dir_processed = "data/processed/",
               births_mye = "data/intermediate/births_mye.rds",
               births_my_lad_1991_2017 = "data/intermediate/births_mid_year_lad_1991_2017.rds",
               births_cy_lad = "data/intermediate/births_calendar_year_lad.rds",
-              lad_output_rds = "data/processed/births_lad.rds"
+              monthly_births_dir = "data/intermediate/monthly_births/",
+              lad_output_rds = "data/processed/births_lad.rds",
+              monthly_lad_output_rds = "data/processed/births_lad_monthly.rds"
 )
 
 if(!dir.exists(fpath$dir_processed)) dir.create(fpath$dir_processed, recursive = TRUE)
@@ -28,3 +33,13 @@ births_lad_persons <- bind_rows(
 
 
 saveRDS(births_lad_persons, fpath$lad_output_rds)
+
+# combine monthly births files into one output
+monthly_fnames <- list.files(fpath$monthly_births_dir, full.names = TRUE)
+
+monthly_data <- lapply(monthly_fnames, read_rds) %>%
+  bind_rows() %>%
+  filter(sex == "persons")
+
+saveRDS(monthly_data, fpath$monthly_lad_output_rds)
+

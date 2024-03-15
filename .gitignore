@@ -47,3 +47,6 @@ rsconnect/
 data/*
 !data/README*
 outputs/*
+
+# notebook html
+monthly_births_qa.nb.html

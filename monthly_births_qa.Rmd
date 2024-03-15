@@ -1,0 +1,137 @@
+---
+title: "Monthly births QA"
+output: html_notebook
+---
+
+
+Check that we have the expected year, gss code and gss name combinations for the monthly and aggregated monthly births
+
+```{r setup}
+library(tidyr)
+library(dplyr)
+source("R/functions/aggregate_to_combined_las.R")
+```
+
+
+```{r}
+births_monthly_lad <- readRDS("data/processed/births_lad_monthly.rds")
+
+combined_geogs <- readRDS("lookups/combined_la_codes_lookup.rds")
+single_codes <- unique(combined_geogs$gss_code)
+combined_geogs <- combined_geogs %>%
+  select(gss_code = combined_gss, gss_name = combined_name) %>%
+  unique()
+
+geogs <- readRDS("lookups/lookup_lsoa_lad.rds") %>%
+  select(gss_code, gss_name) %>%
+  unique() %>%
+  filter(grepl("^E", gss_code) & !gss_code %in% single_codes) %>% 
+  bind_rows(combined_geogs)
+
+sex <- "persons"
+start_date <- min(births_monthly_lad$month_ending_date)
+print(start_date)
+end_date <- max(births_monthly_lad$month_ending_date)
+print(end_date)
+
+expected_months <- seq(start_date + 1, to = end_date + 1, by="month") - 1
+
+expected_rows_df <- expand_grid(sex, month_ending_date = expected_months, nesting(gss_code = geogs$gss_code, gss_name = geogs$gss_name)) %>%
+  mutate(type = "expected")
+
+matched_df <- full_join(births_monthly_lad, expected_rows_df, by = join_by(gss_code, gss_name, month_ending_date, sex))
+
+unmatched <- matched_df %>%
+  filter(is.na(value) | is.na(type))
+
+if (nrow(unmatched) != 0) stop("there are unmatched rows")
+if (nrow(births_monthly_lad) != nrow(expected_rows_df)) stop("there aren't the right number of rows")
+``` 
+
+
+
+Check the monthly births data by comparing yearly aggregations to the annual births data
+
+```{r read_data}
+# Annual births
+births_ctry <- readRDS("data/processed/births_ctry.rds")
+births_rgn <- readRDS("data/processed/births_rgn.rds")
+births_lad <- readRDS("data/processed/births_lad.rds") %>%
+  aggregate_to_combined_las() # make combined LAs in annual data to match aggregated monthly data
+
+
+# yearly aggregations of monthly births
+births_monthly_ctry <- readRDS("data/processed/births_ctry_yearly_by_month.rds") 
+births_monthly_rgn <- readRDS("data/processed/births_rgn_yearly_by_month.rds")
+births_monthly_lad <- readRDS("data/processed/births_lad_yearly_by_month.rds")
+
+```
+
+
+```{r lads}
+lad <- births_lad %>%
+  left_join(rename(births_monthly_lad, monthly_value = value), by = join_by(gss_code, gss_name, year_ending_date, measure, geography, sex))  %>%
+  filter(!is.na(monthly_value)) %>%
+  select(-source.x, -source.y, -source_url.x, -source_url.y) %>%
+  mutate(diff = monthly_value - value, 
+         percdiff = 100*diff/value,
+         absdiff = abs(diff),
+         abspercdiff = abs(percdiff))
+hist(lad$diff)
+hist(lad$percdiff)
+
+head(count(lad, abspercdiff) %>% arrange(-abspercdiff), 20)
+
+```
+
+There are some very large differences, but only 16 of the rows have differences above 1%. On further investigation of these 16 rows it looks like a set of births has been recorded in South Somerset in the annual births, but Somerset West and Taunton for monthly ones.
+
+
+```{r somerset}
+filter(lad, abspercdiff > 1) %>% 
+  arrange(year_ending_date, gss_code) %>% 
+  select(-geography, -sex, -measure) %>%
+  print()
+
+```
+If we remove South Somerset and Somerset West and Taunton from the dataset the histogram of differences looks more reasonable
+
+```{r no_somerset}
+no_somerset <- filter(lad, !gss_code %in% c("E07000189", "E07000246"))
+hist(no_somerset$percdiff)
+
+```
+Do a check on regions:
+
+```{r region}
+rgn <- births_rgn %>%
+  left_join(rename(births_monthly_rgn, monthly_value = value), by = join_by(gss_code, gss_name, year_ending_date, sex))  %>%
+  filter(!is.na(monthly_value)) %>%
+  select(-source.x, -source.y, -source_url.x, -source_url.y, -geography.x, -geography.y) %>%
+  mutate(diff = monthly_value - value, 
+         percdiff = 100*diff/value,
+         absdiff = abs(diff),
+         abspercdiff = abs(percdiff))
+hist(rgn$diff)
+hist(rgn$percdiff)
+
+```
+And on country
+
+```{r country}
+ctry <- births_ctry %>%
+  left_join(rename(births_monthly_ctry, monthly_value = value), by = join_by(gss_code, gss_name, year_ending_date, sex))  %>%
+  filter(!is.na(monthly_value)) %>%
+  select(-source.x, -source.y, -source_url.x, -source_url.y, -geography.x, -geography.y) %>%
+  mutate(diff = monthly_value - value, 
+         percdiff = 100*diff/value,
+         absdiff = abs(diff),
+         abspercdiff = abs(percdiff))
+hist(ctry$diff)
+hist(ctry$percdiff)
+
+
+```
+
+
+
