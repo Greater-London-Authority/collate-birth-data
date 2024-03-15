@@ -20,7 +20,7 @@ knitr::opts_chunk$set(
 
 This repository is intended to host scripts and functions to download and process various birth datasets published by the Office for National Statistics.   
 
-The repository initially contains code for pulling together data from four separately published sources to create a time series of monthly and annual births on current geographies. Outputs from this process are published on the [London Datastore](https://data.london.gov.uk/dataset/annual-birth-series). The sources drawn from are:
+The repository initially contains code for pulling together data from four separately published sources to create a time series of monthly and annual births on current geographies. Outputs from this process are published on the [London Datastore](https://data.london.gov.uk/dataset/birth-estimates). The sources drawn from are:
 
 1. [ONS mid-year population estimates components of change](https://www.ons.gov.uk/peoplepopulationandcommunity/populationandmigration/populationestimates/datasets/populationestimatesforukenglandandwalesscotlandandnorthernireland) - local authority births for mid-year periods from 2001-2 onward
 

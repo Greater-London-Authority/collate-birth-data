@@ -14,7 +14,7 @@ The repository initially contains code for pulling together data from
 four separately published sources to create a time series of monthly and
 annual births on current geographies. Outputs from this process are
 published on the [London
-Datastore](https://data.london.gov.uk/dataset/annual-birth-series). The
+Datastore](https://data.london.gov.uk/dataset/birth-estimates). The
 sources drawn from are:
 
 1.  [ONS mid-year population estimates components of
