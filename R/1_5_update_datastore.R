@@ -43,10 +43,10 @@ datastore_resources_list<-
        births_monthly_rgn = "data/processed/births_rgn_monthly.csv",
        births_monthly_ctry = "data/processed/births_ctry_monthly.csv",
        births_monthly_itl = "data/processed/births_itl_monthly.csv",
-       births_yearly_by_month_lad = "data/processed/births_lad_yearly_by_month.csv",
-       births_rgn_yearly_by_month = "data/processed/births_rgn_yearly_by_month.csv",
-       births_ctry_yearly_by_month = "data/processed/births_ctry_yearly_by_month.csv",
-       births_itl_yearly_by_month = "data/processed/births_itl_yearly_by_month.csv",
+       births_yearly_by_month_lad = "data/processed/births_lad_rolling_12_month.csv",
+       births_rgn_yearly_by_month = "data/processed/births_rgn_rolling_12_month.csv",
+       births_ctry_yearly_by_month = "data/processed/births_itl_rolling_12_month.csv",
+       births_itl_yearly_by_month = "data/processed/births_ctry_rolling_12_month.csv",
        births_lad_rds = "data/processed/births_lad.rds") %>%
   rev()
 
