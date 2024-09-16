@@ -1,6 +1,5 @@
 library(readr)
 library(dplyr)
-# library(gsscoder)
 
 fpath <- list(dir_processed = "data/processed/",
               births_mye = "data/intermediate/births_mye.rds",
