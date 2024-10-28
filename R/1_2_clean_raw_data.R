@@ -3,9 +3,10 @@ library(gsscoder)
 source("R/functions/clean_mye_births.R")
 source("R/functions/clean_births_mid_year_lsoa_1991_2017.R")
 source("R/functions/clean_births_calendar_year_lsoa_nomis.R")
-source("R/functions/aggregate_lsoa11_to_lad.R")
+#source("R/functions/aggregate_lsoa11_to_lad.R")
+source("R/functions/aggregate_lsoa_to_lad.R")
 source("R/functions/clean_monthly_births_la.R")
-source("R/functions/recode_gss.R")
+#source("R/functions/recode_gss.R")
 source("R/functions/add_persons.R")
 
 fpath <- list(raw_births_cy_lsoa = "data/raw/births_calendar_year_nomis_lsoa.rds",
@@ -84,11 +85,11 @@ births_my_lad_1991_2017 <- aggregate_lsoa11_to_lad(fp_lsoa = fpath$births_my_lso
 saveRDS(births_my_lad_1991_2017, fpath$births_my_lad_1991_2017)
 
 
-births_cy_lad <- aggregate_lsoa11_to_lad(fp_lsoa = fpath$births_cy_lsoa,
+births_cy_lad <- aggregate_lsoa_to_lad(fp_lsoa = fpath$births_cy_lsoa,
                                          lookup_lsoa_lad = readRDS(fpath$lookup_lsoa_lad),
-                                         geog_name = "LAD21") %>%
+                                         geog_name = "LAD22") %>%
 select(-gss_name) %>%
-  recode_gss(recode_from_year = 2018,
+  recode_gss(recode_from_year = 2022,
              recode_to_year = 2023) %>%
   add_gss_names(gss_year = 2023) %>%
   mutate(geography = "LAD23")

@@ -22,8 +22,9 @@ urls <- list(mye_2011_on = "https://www.ons.gov.uk/file?uri=/peoplepopulationand
 if(!dir.exists(fpath$dir_raw)) dir.create(fpath$dir_raw, recursive = TRUE)
 if(!dir.exists(fpath$dir_raw_monthly_births)) dir.create(fpath$dir_raw_monthly_births, recursive = TRUE)
 
-# get lsoa calendar year births via Nomis api
+# get lsoa calendar year births via Nomis api (2011 geog up to CY2022, 2021 geog from 2023 onwards)
 fetch_calendar_year_births_lsoa(fp_save = fpath$raw_births_cy_lsoa)
+
 
 # get lsoa mid-year births from ONS adhoc page
 fetch_mid_year_births_lsoa_1992_2017(fp_save = fpath$raw_births_my_lsoa,
