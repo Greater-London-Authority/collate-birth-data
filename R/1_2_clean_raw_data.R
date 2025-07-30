@@ -68,8 +68,8 @@ clean_births_calendar_year_lsoa_nomis(fp_raw = fpath$raw_births_cy_lsoa,
 #                         url_lookup = fpath$monthly_births_urls,
 #                         gss_code_year = 2021)
 
-births_my_lad_1991_2017 <- aggregate_lsoa_to_lad(fp_lsoa = fpath$births_my_lsoa_1991_2017, # an annoying error here from last year. Hopefully doesn't take too long to figure out.
-                                                 lookup_lsoa_lad = readRDS(fpath$lookup_lsoa_lad), # the point is, what is this lookup? Is it 2011, 2021, something else? Annoying...
+births_my_lad_1991_2017 <- aggregate_lsoa_to_lad(fp_lsoa = fpath$births_my_lsoa_1991_2017,
+                                                 lookup_lsoa_lad = readRDS(fpath$lookup_lsoa_lad),
                                                  geog_name = "LAD21") %>%
   select(-gss_name) %>%
   recode_gss(recode_from_year = 2018,
