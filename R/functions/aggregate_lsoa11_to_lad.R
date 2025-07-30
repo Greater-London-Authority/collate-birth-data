@@ -1,6 +1,6 @@
 library(dplyr)
 
-aggregate_lsoa11_to_lad <- function(fp_lsoa, fp_save, lookup_lsoa_lad, geog_name = "LAD21") {
+aggregate_lsoa11_to_lad <- function(fp_lsoa, lookup_lsoa_lad, geog_name = "LAD21") {
 
   lad_births <- readRDS(fp_lsoa) %>%
     left_join(lookup_lsoa_lad, by = "LSOA11CD") %>%
@@ -8,5 +8,5 @@ aggregate_lsoa11_to_lad <- function(fp_lsoa, fp_save, lookup_lsoa_lad, geog_name
     summarise(value = sum(value), .groups = "drop") %>%
     mutate(geography = geog_name)
 
-  saveRDS(lad_births, fp_save)
+  return(lad_births)
 }

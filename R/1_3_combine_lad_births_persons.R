@@ -16,8 +16,7 @@ if(!dir.exists(fpath$dir_processed)) dir.create(fpath$dir_processed, recursive =
 births_my_pre_2002 <- readRDS(fpath$births_my_lad_1991_2017) %>%
   filter(year < 2002)
 
-births_my_2002_on <- readRDS(fpath$births_mye) %>%
-  mutate(geography = "LAD21")
+births_my_2002_on <- readRDS(fpath$births_mye)
 
 births_cy_2013_on <- readRDS(fpath$births_cy_lad)
 

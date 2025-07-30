@@ -43,7 +43,7 @@ births_rgn <- aggregate_to_region(births_lad,
                                   readRDS(fpath$lookup_lad_rgn)) %>%
   na.omit() %>%
   arrange(gss_code, year_ending_date) %>%
-  mutate(geography = "RGN21") %>%
+  mutate(geography = "RGN23") %>%
   select(gss_code, gss_name, everything())
 
 births_itl <- aggregate_to_region(births_lad,
@@ -55,7 +55,7 @@ births_itl <- aggregate_to_region(births_lad,
 births_ctry <- aggregate_to_region(births_lad,
                                    readRDS(fpath$lookup_lad_ctry)) %>%
   arrange(gss_code, year_ending_date) %>%
-  mutate(geography = "CTRY21") %>%
+  mutate(geography = "CTRY23") %>%
   select(gss_code, gss_name, everything())
 
 saveRDS(births_rgn, fpath$rgn_output_rds)
@@ -80,7 +80,7 @@ births_rgn_monthly <- aggregate_to_region(births_lad_monthly_no_combined,
                                   readRDS(fpath$lookup_lad_rgn)) %>%
   na.omit() %>%
   arrange(gss_code, month_ending_date) %>%
-  mutate(geography = "RGN21") %>%
+  mutate(geography = "RGN23") %>%
   select(gss_code, gss_name, everything())
 
 births_itl_monthly <- aggregate_to_region(births_lad_monthly_no_combined,
@@ -92,7 +92,7 @@ births_itl_monthly <- aggregate_to_region(births_lad_monthly_no_combined,
 births_ctry_monthly <- aggregate_to_region(births_lad_monthly_no_combined,
                                    readRDS(fpath$lookup_lad_ctry)) %>%
   arrange(gss_code, month_ending_date) %>%
-  mutate(geography = "CTRY21") %>%
+  mutate(geography = "CTRY23") %>%
   select(gss_code, gss_name, everything())
 
 saveRDS(births_rgn_monthly, fpath$rgn_monthly_output_rds)
@@ -123,7 +123,7 @@ births_rgn_yearly_by_month <- aggregate_to_region(births_lad_yearly_by_month_no_
                                           readRDS(fpath$lookup_lad_rgn)) %>%
   na.omit() %>%
   arrange(gss_code, year_ending_date) %>%
-  mutate(geography = "RGN21") %>%
+  mutate(geography = "RGN23") %>%
   select(gss_code, gss_name, everything())
 
 births_itl_yearly_by_month <- aggregate_to_region(births_lad_yearly_by_month_no_combined,
@@ -135,7 +135,7 @@ births_itl_yearly_by_month <- aggregate_to_region(births_lad_yearly_by_month_no_
 births_ctry_yearly_by_month <- aggregate_to_region(births_lad_yearly_by_month_no_combined,
                                            readRDS(fpath$lookup_lad_ctry)) %>%
   arrange(gss_code, year_ending_date) %>%
-  mutate(geography = "CTRY21") %>%
+  mutate(geography = "CTRY23") %>%
   select(gss_code, gss_name, everything())
 
 saveRDS(births_lad_yearly_by_month, fpath$lad_yearly_by_month_output_rds)
