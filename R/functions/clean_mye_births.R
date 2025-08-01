@@ -21,6 +21,8 @@ clean_mye_births <- function(fpath_raw,
     mutate(sex = recode(sex,
                         "M" = "male",
                         "F" = "female",
+                        "m" = "male",
+                        "f" = "female",
                         "1" = "male",
                         "2" = "female")) %>%
     select(-country) %>%

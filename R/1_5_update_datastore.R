@@ -26,10 +26,10 @@ library(rmarkdown)
 options(scipen=999)
 
 # 1.3 Set my_api_key for the London Datastore
-my_api_key<-Sys.getenv("lds_api_key")
+my_api_key <- Sys.getenv("lds_api_key")
 
 # 1.4 the slug is the name of the datastore page as given at the end of the page URL
-page_slug<-"birth-estimates"
+page_slug <- "birth-estimates"
 
 # Section 2 - Add resources to dataset -------------------------------------
 
@@ -39,31 +39,15 @@ datastore_resources_list<-
        births_rgn = "data/processed/births_rgn.csv",
        births_ctry = "data/processed/births_ctry.csv",
        births_itl = "data/processed/births_itl.csv",
-       births_monthly_lad = "data/processed/births_lad_monthly.csv",
-       births_monthly_rgn = "data/processed/births_rgn_monthly.csv",
-       births_monthly_ctry = "data/processed/births_ctry_monthly.csv",
-       births_monthly_itl = "data/processed/births_itl_monthly.csv",
-       births_yearly_by_month_lad = "data/processed/births_lad_rolling_12_month.csv",
-       births_rgn_yearly_by_month = "data/processed/births_rgn_rolling_12_month.csv",
-       births_ctry_yearly_by_month = "data/processed/births_itl_rolling_12_month.csv",
-       births_itl_yearly_by_month = "data/processed/births_ctry_rolling_12_month.csv",
        births_lad_rds = "data/processed/births_lad.rds") %>%
   rev()
 
 
-datastore_resources_descriptions<-
+datastore_resources_descriptions <-
   list(births_lad = "Annual births for 2021 local authority districts in England and Wales by date of year ending",
        births_rgn = "Annual births for regions in England by date of year ending",
        births_ctry = "Annual births for the countries of England and Wales by date of year ending",
        births_itl = "Annual births for 2021 ITL 2 subregions in England and Wales by date of year ending",
-       births_monthly_lad = "Monthly births for 2021 local authority districts in England by date of month ending. Hackney & City of London and Cornwall & Isles of Scilly are combined in this data",
-       births_monthly_rgn = "Monthly births for regions in England by date of month ending",
-       births_monthly_ctry = "Monthly births for the country of England by date of month ending",
-       births_monthly_itl = "Monthly births for 2021 ITL 2 subregions in England by date of month ending",
-       births_yearly_by_month_lad = "Rolling yearly aggregations of monthly births data for each month. Local authority districts in England by date of year ending. Hackney & City of London and Cornwall & Isles of Scilly are combined in this data",
-       births_rgn_yearly_by_month = "Rolling yearly aggregations of monthly births data for each month. Regions in England by date of year ending",
-       births_ctry_yearly_by_month = "Rolling yearly aggregations of monthly births data for each month. Country of England by date of year ending",
-       births_itl_yearly_by_month = "Rolling yearly aggregations of monthly births data for each month. 2021 ITL 2 subregions in England by date of year ending",
        births_lad_rds = "Annual births for 2021 local authority districts in England and Wales by date of year ending. This file is saved in the RDS format native to the R programming language and is intended for use as an input to the process for modelling recent births: https://github.com/Greater-London-Authority/nowcast-birth-estimates") %>%
   rev()
 
@@ -136,3 +120,4 @@ if (!"resource_id" %in% colnames(lds_meta_dataset(slug=page_slug, my_api_key))) 
 
 # 3.1
 rm(list = ls())
+
