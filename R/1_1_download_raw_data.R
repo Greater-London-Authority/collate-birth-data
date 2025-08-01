@@ -11,7 +11,7 @@ fpath <- list(dir_raw = "data/raw/",
               raw_mye_2001_11 = "data/raw/mye_2001_11(2018_geog).xlsx"
 )
 
-urls <- list(mye_2011_on = "https://www.ons.gov.uk/file?uri=/peoplepopulationandcommunity/populationandmigration/populationestimates/datasets/estimatesofthepopulationforenglandandwales/mid2011tomid2024detailedtimeseries/myebtablesenglandwales20112024.xlsx", # i just changed 23 to 24. Is that ok? Let's see.
+urls <- list(mye_2011_on = "https://www.ons.gov.uk/file?uri=/peoplepopulationandcommunity/populationandmigration/populationestimates/datasets/estimatesofthepopulationforenglandandwales/mid2011tomid2024detailedtimeseries/myebtablesenglandwales20112024.xlsx",
              mye_2001_11 = "https://www.ons.gov.uk/file?uri=/peoplepopulationandcommunity/populationandmigration/populationestimates/datasets/estimatesofthepopulationforenglandandwales/mid2001tomid2011detailedtimeseries/myebtablesewsn20012011.xlsx",
              births_my_lsoa = "https://www.ons.gov.uk/file?uri=/peoplepopulationandcommunity/birthsdeathsandmarriages/deaths/adhocs/009628birthsanddeathsbylowersuperoutputarealsoaenglandandwales1991to1992to2016to2017/lsoabirthsdeaths19912017final.zip"
 )

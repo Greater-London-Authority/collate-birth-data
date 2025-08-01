@@ -26,10 +26,10 @@ library(rmarkdown)
 options(scipen=999)
 
 # 1.3 Set my_api_key for the London Datastore
-my_api_key<-Sys.getenv("lds_api_key")
+my_api_key <- Sys.getenv("lds_api_key")
 
 # 1.4 the slug is the name of the datastore page as given at the end of the page URL
-page_slug<-"birth-estimates"
+page_slug <- "birth-estimates"
 
 # Section 2 - Add resources to dataset -------------------------------------
 
@@ -120,3 +120,4 @@ if (!"resource_id" %in% colnames(lds_meta_dataset(slug=page_slug, my_api_key))) 
 
 # 3.1
 rm(list = ls())
+
