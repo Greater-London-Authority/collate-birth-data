@@ -8,10 +8,14 @@ fpath <- list(lad_output_rds = "data/processed/births_lad.rds",
               itl_output_rds = "data/processed/births_itl.rds",
               ctry_output_rds = "data/processed/births_ctry.rds",
 
+              all_output_rds = "data/processed/annual_births.rds",
+
               lad_output_csv = "data/processed/births_lad.csv",
               rgn_output_csv = "data/processed/births_rgn.csv",
               itl_output_csv = "data/processed/births_itl.csv",
               ctry_output_csv = "data/processed/births_ctry.csv",
+
+              all_output_csv = "data/processed/annual_births.csv",
 
               lookup_lad_rgn = "lookups/lookup_lad_rgn.rds",
               lookup_lad_itl = "lookups/lookup_lad_itl.rds",
@@ -23,7 +27,7 @@ births_rgn <- aggregate_to_region(births_lad,
                                   readRDS(fpath$lookup_lad_rgn)) %>%
   na.omit() %>%
   arrange(gss_code, year_ending_date) %>%
-  mutate(geography = "RGN23") %>%
+  mutate(geography = "region") %>%
   select(gss_code, gss_name, everything())
 
 births_itl <- aggregate_to_region(births_lad,
@@ -35,13 +39,19 @@ births_itl <- aggregate_to_region(births_lad,
 births_ctry <- aggregate_to_region(births_lad,
                                    readRDS(fpath$lookup_lad_ctry)) %>%
   arrange(gss_code, year_ending_date) %>%
-  mutate(geography = "CTRY23") %>%
+  mutate(geography = "country") %>%
   select(gss_code, gss_name, everything())
 
+
+births_all <- bind_rows(births_ctry, births_rgn, births_lad, births_itl) |>
+  select(-c(source_url))
+
+saveRDS(births_all, fpath$all_output_rds)
 saveRDS(births_rgn, fpath$rgn_output_rds)
 saveRDS(births_itl, fpath$itl_output_rds)
 saveRDS(births_ctry, fpath$ctry_output_rds)
 
+write_csv(births_all, fpath$all_output_csv)
 write_csv(births_lad, fpath$lad_output_csv)
 write_csv(births_rgn, fpath$rgn_output_csv)
 write_csv(births_itl, fpath$itl_output_csv)
